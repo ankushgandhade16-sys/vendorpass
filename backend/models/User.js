@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
   wallet: { type: mongoose.Schema.Types.ObjectId, ref: 'Wallet' },
   blocked: { type: Boolean, default: false },
   blockedReason: { type: String },
+  upiPin: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

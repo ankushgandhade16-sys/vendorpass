@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react';
-import { Wallet, Search, CreditCard, MessageSquare, LogOut, ArrowUpRight, ArrowDownRight, User, Send, IndianRupee, AlertTriangle, QrCode, History, Home, Bell, TrendingUp, ShieldCheck } from 'lucide-react';
+import { Wallet, Search, CreditCard, MessageSquare, LogOut, ArrowUpRight, ArrowDownRight, User, Send, IndianRupee, AlertTriangle, QrCode, History, Home, Bell, TrendingUp, ShieldCheck, Check } from 'lucide-react';
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -43,6 +43,17 @@ const VendorDashboard = () => {
   // Simulate modal
   const [simulateModal, setSimulateModal] = useState(null); // null | 'credit' | 'debit'
   const [simulateAmount, setSimulateAmount] = useState('');
+  
+  // Request & Repay Loan Modals
+  const [requestLoanWholesalerId, setRequestLoanWholesalerId] = useState(null);
+  const [requestLoanAmount, setRequestLoanAmount] = useState('');
+
+  const [successScreen, setSuccessScreen] = useState(null); // { title: '', amount: '', subtitle: '' }
+  
+  const [upiModal, setUpiModal] = useState(null); // { action: 'repay_loan' | 'send_money', payload: {} }
+  const [upiPin, setUpiPin] = useState('');
+  const [upiError, setUpiError] = useState('');
+  
   // Chat state
   const [conversations, setConversations] = useState([]);
   const [chatUserId, setChatUserId] = useState(null);
@@ -57,7 +68,7 @@ const VendorDashboard = () => {
 
   useEffect(() => {
     if (activeTab === 'messages') fetchConversations();
-    if (activeTab === 'credit') fetchLoans();
+    if (activeTab === 'credit' || activeTab === 'wholesalers') fetchLoans();
   }, [activeTab]);
 
   // Live countdown timer — ticks every second
@@ -155,39 +166,96 @@ const VendorDashboard = () => {
     if (!simulateAmount || isNaN(simulateAmount) || Number(simulateAmount) <= 0) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/transactions/simulate',
-        { amount: Number(simulateAmount), type: simulateModal, description: `${simulateModal === 'credit' ? 'Added' : 'Sent'} ₹${simulateAmount}` },
-        { headers: { 'x-auth-token': token } }
-      );
-      setSimulateModal(null);
-      setSimulateAmount('');
-      fetchData();
+      if (simulateModal === 'credit') {
+        // Just add money to wallet (no PIN needed)
+        await axios.post('/api/transactions/simulate', { amount: Number(simulateAmount), type: 'credit', description: `Added ₹${simulateAmount}` }, { headers: { 'x-auth-token': token } });
+        setSimulateModal(null);
+        setSimulateAmount('');
+        fetchData();
+      } else if (simulateModal === 'debit') {
+        // Paying someone in chat — require UPI PIN
+        setUpiError('');
+        setUpiModal({ action: 'send_money', payload: { amount: Number(simulateAmount) } });
+        setSimulateModal(null);
+      }
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
 
-  const handleRequestCredit = async (wholesalerId) => {
-    const amount = prompt('Enter loan amount requested:');
-    if (!amount || isNaN(amount)) return;
+  const handleRequestCredit = (wholesalerId) => {
+    const hasActiveLoan = loans.some(l => ['Pending', 'Active', 'Overdue', 'Defaulted'].includes(l.status));
+    if (hasActiveLoan) {
+      // Direct them to the Loans tab to pay/view their existing liability
+      setActiveTab('credit');
+      return;
+    }
+    
+    setRequestLoanAmount('');
+    setRequestLoanWholesalerId(wholesalerId);
+  };
+
+  const submitRequestCredit = async () => {
+    if (!requestLoanAmount || isNaN(requestLoanAmount) || Number(requestLoanAmount) <= 0) return;
     try {
       const token = localStorage.getItem('token');
       await axios.post('/api/credit/request', 
-        { wholesalerId, amount: Number(amount) },
+        { wholesalerId: requestLoanWholesalerId, amount: Number(requestLoanAmount) },
         { headers: { 'x-auth-token': token } }
       );
-      alert('Credit request sent! Due in 30 days with 5% interest.');
+      setRequestLoanWholesalerId(null);
+      setSuccessScreen({
+        title: 'Request Sent Successfully',
+        amount: requestLoanAmount,
+        subtitle: 'Wait for wholesaler approval.'
+      });
+      fetchLoans();
     } catch (err) { alert(err.response?.data?.msg || 'Error requesting credit'); }
   };
 
-  const handleRepayLoan = async (loanId) => {
-    const amount = prompt('Enter repayment amount:');
-    if (!amount || isNaN(amount)) return;
+  const handleRepayLoan = (loanId, amountToRepay) => {
+    if (!amountToRepay || isNaN(amountToRepay) || Number(amountToRepay) <= 0) return;
+    setUpiError('');
+    setUpiModal({ action: 'repay_loan', payload: { loanId: loanId, amount: Number(amountToRepay) } });
+  };
+
+  const handleUpiSubmit = async () => {
+    // Accept any 4-digit PIN for hackathon demo
+    if (upiPin.length !== 4) return;
+    setUpiError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`/api/credit/${loanId}/repay`, { amount: Number(amount) }, { headers: { 'x-auth-token': token } });
-      alert(res.data.msg);
-      fetchLoans();
-      fetchData();
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+      if (upiModal.action === 'repay_loan') {
+        const { loanId, amount } = upiModal.payload;
+        const res = await axios.post(
+          `/api/credit/${loanId}/repay`,
+          { amount },
+          { headers: { 'x-auth-token': token } }
+        );
+        setUpiModal(null);
+        setUpiPin('');
+        // Optimistically update loan in state
+        setLoans(prev => prev.map(l => l._id === loanId ? { ...l, ...res.data.loan } : l));
+        setSuccessScreen({ title: 'Payment Successful', amount, subtitle: res.data.msg || 'Loan repaid successfully.' });
+        // Refetch to get updated trust score + wallet
+        await fetchLoans();
+        await fetchData();
+      } else if (upiModal.action === 'send_money') {
+        const { amount } = upiModal.payload;
+        await axios.post(
+          '/api/messages/send-money',
+          { receiverId: chatUserId, amount },
+          { headers: { 'x-auth-token': token } }
+        );
+        setUpiModal(null);
+        setUpiPin('');
+        setSimulateAmount('');
+        fetchConversations();
+        fetchData();
+        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: 'Money sent securely.' });
+      }
+    } catch (err) {
+      setUpiError(err.response?.data?.msg || err.message || 'Transaction failed');
+      setUpiPin('');
+    }
   };
 
   // Start chat with a wholesaler (from wholesaler list)
@@ -342,20 +410,20 @@ const VendorDashboard = () => {
                       {/* SVG Semi-circle gauge */}
                       <svg viewBox="0 0 100 50" className="w-48 overflow-visible">
                         <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#E2E8F0" strokeWidth="8" strokeLinecap="round" />
-                        <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#10B981" strokeWidth="8" strokeLinecap="round" strokeDasharray="125.6" strokeDashoffset="35" />
+                        <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke={vendor.trustTier === 'Platinum' ? '#1E293B' : vendor.trustTier === 'Gold' ? '#EAB308' : vendor.trustTier === 'Silver' ? '#94A3B8' : '#F97316'} strokeWidth="8" strokeLinecap="round" strokeDasharray="125.6" strokeDashoffset={125.6 - (Math.min(100, Math.max(0, vendor.trustScore || 0)) / 100) * 125.6} style={{ transition: 'stroke-dashoffset 1s ease-in-out' }} />
                       </svg>
                       <div className="absolute bottom-4 text-center flex flex-col items-center">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-extrabold text-emerald-600">72%</span>
+                          <span className={`text-3xl font-extrabold ${vendor.trustTier === 'Platinum' ? 'text-slate-800' : vendor.trustTier === 'Gold' ? 'text-yellow-500' : vendor.trustTier === 'Silver' ? 'text-slate-400' : 'text-orange-500'}`}>{vendor.trustScore || 0}%</span>
                         </div>
-                        <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full mt-1 uppercase">{vendor.trustTier} Level</span>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 uppercase ${vendor.trustTier === 'Platinum' ? 'bg-slate-800 text-white' : vendor.trustTier === 'Gold' ? 'bg-yellow-100 text-yellow-800' : vendor.trustTier === 'Silver' ? 'bg-slate-200 text-slate-800' : 'bg-orange-100 text-orange-800'}`}>{vendor.trustTier} Level</span>
                       </div>
                     </div>
                     <div className="flex justify-between text-[9px] font-medium text-slate-500 mt-2 px-2">
-                      <span className={vendor.trustTier === 'Bronze' ? 'text-emerald-600 font-bold' : ''}>Bronze</span>
-                      <span className={vendor.trustTier === 'Silver' ? 'text-emerald-600 font-bold' : ''}>Silver</span>
-                      <span className={vendor.trustTier === 'Gold' ? 'text-emerald-600 font-bold' : ''}>Gold</span>
-                      <span className={vendor.trustTier === 'Platinum' ? 'text-emerald-600 font-bold' : ''}>Platinum</span>
+                      <span className={vendor.trustTier === 'Bronze' ? 'text-orange-600 font-bold' : ''}>Bronze</span>
+                      <span className={vendor.trustTier === 'Silver' ? 'text-slate-600 font-bold' : ''}>Silver</span>
+                      <span className={vendor.trustTier === 'Gold' ? 'text-yellow-600 font-bold' : ''}>Gold</span>
+                      <span className={vendor.trustTier === 'Platinum' ? 'text-slate-800 font-bold' : ''}>Platinum</span>
                     </div>
                   </div>
                 </div>
@@ -425,19 +493,30 @@ const VendorDashboard = () => {
               <h2 className="text-2xl font-bold mb-4">Find Wholesalers</h2>
               <input type="text" placeholder="Search by name or category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 mb-6 shadow-sm" />
               <div className="grid gap-4">
-                {wholesalers.filter(ws => ws.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || (ws.productCategories && ws.productCategories.join(' ').toLowerCase().includes(searchQuery.toLowerCase()))).map(ws => (
-                  <div key={ws._id} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl border border-slate-200">
-                    <h3 className="font-bold text-lg">{ws.businessName}</h3>
-                    <p className="text-sm text-emerald-600 mb-1">👤 {ws.fullName}</p>
-                    <p className="text-sm text-slate-500 mb-3">{ws.productCategories?.join(', ')}</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleRequestCredit(ws._id)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium transition">Request Loan</button>
-                      <button onClick={() => startChatWith(ws)} className="flex-1 bg-slate-50 border border-slate-200 hover:bg-white/20 py-2 rounded-xl font-medium transition flex items-center justify-center gap-2">
-                        <MessageSquare className="w-4 h-4" /> Chat
-                      </button>
+                {wholesalers.filter(ws => ws.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || (ws.productCategories && ws.productCategories.join(' ').toLowerCase().includes(searchQuery.toLowerCase()))).map(ws => {
+                  const hasPending = loans.some(l => (l.wholesaler?._id === ws._id || l.wholesaler === ws._id) && l.status === 'Pending');
+                  return (
+                    <div key={ws._id} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+                      <h3 className="font-bold text-lg">{ws.businessName}</h3>
+                      <p className="text-sm text-emerald-600 mb-1">👤 {ws.fullName}</p>
+                      <p className="text-sm text-slate-500 mb-3">{ws.productCategories?.join(', ')}</p>
+                      <div className="flex gap-2">
+                        {hasPending ? (
+                          <button disabled className="flex-1 bg-amber-100 border border-amber-300 text-amber-700 py-2 rounded-xl font-medium cursor-not-allowed">
+                            Request Pending
+                          </button>
+                        ) : (
+                          <button onClick={() => handleRequestCredit(ws._id)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium transition">
+                            Request Loan
+                          </button>
+                        )}
+                        <button onClick={() => startChatWith(ws)} className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 py-2 rounded-xl font-medium transition flex items-center justify-center gap-2">
+                          <MessageSquare className="w-4 h-4" /> Chat
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -457,9 +536,22 @@ const VendorDashboard = () => {
                 return (
                   <div key={loan._id} className={`p-5 rounded-2xl border ${isOverdue ? 'bg-red-900/20 border-red-500/30' : 'bg-white border-slate-200'}`}>
                     <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500">Loan Amount</p>
-                        <p className="text-2xl font-bold">₹{loan.amount}</p>
+                      <div className="flex gap-4 items-center">
+                        <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 border-2 border-white shadow-sm">
+                          {loan.wholesaler?.photos?.[0] ? (
+                            <img src={getPhotoUrl(loan.wholesaler.photos[0])} alt="Wholesaler" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-8 h-8 m-3 text-slate-300" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Loan Amount</p>
+                          <p className="text-3xl font-black text-slate-800 leading-none mb-1">₹{loan.amount}</p>
+                          <p className="text-sm text-slate-700 font-semibold">
+                            {loan.wholesaler?.fullName || loan.wholesaler?.businessName || 'Wholesaler'}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-medium">ID: {loan.wholesaler?._id || loan.wholesaler}</p>
+                        </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         loan.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-600' :
@@ -510,7 +602,7 @@ const VendorDashboard = () => {
                             <span>Interest increases +2% every 2 min overdue. Account blocks after 10 min!</span>
                           </div>
                         )}
-                        <button onClick={() => handleRepayLoan(loan._id)} className="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-2 text-lg">
+                        <button onClick={() => handleRepayLoan(loan._id, remaining.toFixed(2))} className="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-2 text-lg text-white">
                           💳 Repay ₹{remaining.toFixed(2)} Now
                         </button>
                       </div>
@@ -637,6 +729,42 @@ const VendorDashboard = () => {
 
 </div>
 
+        {/* Request Loan Modal */}
+        {requestLoanWholesalerId && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4" onClick={() => setRequestLoanWholesalerId(null)}>
+            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 bg-blue-50 text-blue-600">
+                  <CreditCard className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-extrabold text-slate-900">Request Loan</h3>
+                <p className="text-slate-400 text-sm mt-1">Enter the amount you need</p>
+              </div>
+              <div className="relative mb-6">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-3xl font-black text-slate-300">₹</span>
+                <input
+                  type="number"
+                  min="1"
+                  autoFocus
+                  value={requestLoanAmount}
+                  onChange={e => setRequestLoanAmount(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submitRequestCredit()}
+                  placeholder="0"
+                  className="w-full pl-14 pr-4 py-5 text-4xl font-black text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-center"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setRequestLoanWholesalerId(null)} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button onClick={submitRequestCredit} className="py-4 rounded-2xl text-white font-bold transition hover:-translate-y-0.5 shadow-lg bg-blue-600 hover:bg-blue-700 shadow-blue-200">
+                  Request
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Repay Loan Modal Removed */}
+
         {/* Add Money / Send Money Modal */}
         {simulateModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4" onClick={() => setSimulateModal(null)}>
@@ -696,6 +824,84 @@ const VendorDashboard = () => {
             </button>
           </div>
         </div>
+        {/* UPI PIN Modal */}
+        {upiModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[150] flex flex-col items-center justify-end sm:justify-center p-4 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300">
+            <div className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-blue-500"></div>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-slate-50 border-2 border-slate-100 shadow-inner">
+                  <ShieldCheck className="w-8 h-8 text-slate-800" />
+                </div>
+                <h3 className="text-2xl font-extrabold text-slate-900">Enter UPI PIN</h3>
+                <p className="text-slate-500 text-sm mt-1 font-medium">To securely process ₹{upiModal.payload.amount}</p>
+                {upiError && <p className="text-red-500 text-sm font-bold mt-2 animate-shake">{upiError}</p>}
+              </div>
+              <div className="mb-8">
+                <div className="flex justify-center gap-3">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl font-black transition-all ${upiPin.length > i ? 'bg-slate-800 text-white shadow-lg scale-105' : upiError ? 'bg-red-50 border-2 border-red-200 text-red-500' : 'bg-slate-100 text-slate-300 border-2 border-slate-200'}`}>
+                      {upiPin.length > i ? '•' : ''}
+                    </div>
+                  ))}
+                </div>
+                <input
+                  type="password"
+                  maxLength="4"
+                  pattern="\d*"
+                  autoFocus
+                  value={upiPin}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setUpiPin(val);
+                    if (upiError) setUpiError('');
+                    if (val.length === 4) {
+                      setTimeout(() => document.getElementById('upi-submit-btn').click(), 100);
+                    }
+                  }}
+                  className="absolute opacity-0 top-0 left-0 w-full h-full cursor-text"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3 relative z-10">
+                <button onClick={() => { setUpiModal(null); setUpiPin(''); }} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button id="upi-submit-btn" onClick={handleUpiSubmit} disabled={upiPin.length !== 4} className="py-4 rounded-2xl text-white font-bold transition hover:-translate-y-0.5 shadow-lg bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 disabled:opacity-50 disabled:hover:translate-y-0">
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Full Screen Success Screen (PhonePe / GPay style) */}
+        {successScreen && (
+          <div className="fixed inset-0 bg-emerald-600 z-[200] flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-8 shadow-2xl scale-in-center">
+              <Check className="w-16 h-16 text-emerald-600" />
+            </div>
+            <h2 className="text-3xl font-extrabold text-white mb-2 text-center">{successScreen.title}</h2>
+            <div className="flex items-center justify-center gap-1 text-white mb-6 w-full">
+              <IndianRupee className="w-10 h-10 opacity-80" />
+              <span className="text-7xl font-black tracking-tighter">{successScreen.amount}</span>
+            </div>
+            <p className="text-emerald-100 text-lg mb-12 text-center max-w-xs">{successScreen.subtitle}</p>
+            <button 
+              onClick={() => setSuccessScreen(null)} 
+              className="mt-auto mb-8 w-full max-w-sm bg-white text-emerald-600 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition shadow-xl"
+            >
+              Done
+            </button>
+            <style>{`
+              .scale-in-center {
+                animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+              }
+              @keyframes scale-in-center {
+                0% { transform: scale(0); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
+              }
+            `}</style>
+          </div>
+        )}
+
       </div>
     </div>
   );

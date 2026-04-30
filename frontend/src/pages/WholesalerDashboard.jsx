@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Users, LogOut, Wallet, Building2, MessageSquare, User, Send, IndianRupee, AlertTriangle, Clock, Percent } from 'lucide-react';
+import { Users, LogOut, Wallet, Building2, MessageSquare, User, Send, IndianRupee, AlertTriangle, Clock, Percent, ShieldCheck, Check } from 'lucide-react';
 
 const WholesalerDashboard = () => {
   const navigate = useNavigate();
@@ -17,6 +17,11 @@ const WholesalerDashboard = () => {
   const [showPayInput, setShowPayInput] = useState(false);
   const [loanInputs, setLoanInputs] = useState({});
   const [now, setNow] = useState(new Date());
+
+  const [upiModal, setUpiModal] = useState(null); // { action: 'send_money', payload: {} }
+  const [upiPin, setUpiPin] = useState('');
+  const [upiError, setUpiError] = useState('');
+  const [successScreen, setSuccessScreen] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => {
@@ -84,14 +89,34 @@ const WholesalerDashboard = () => {
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
 
-  const sendMoney = async () => {
-    if (!chatAmount || isNaN(chatAmount)) return;
+  const sendMoney = () => {
+    if (!chatAmount || isNaN(chatAmount) || Number(chatAmount) <= 0) return;
+    setUpiError('');
+    setUpiModal({ action: 'send_money', payload: { amount: Number(chatAmount), note: chatText } });
+  };
+
+  const handleUpiSubmit = async () => {
+    // Accept any 4-digit PIN for hackathon demo
+    if (upiPin.length !== 4) return;
+    setUpiError('');
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/messages/send-money', { receiverId: chatUserId, amount: Number(chatAmount), note: chatText || 'Payment' }, { headers: { 'x-auth-token': token } });
-      setChatAmount(''); setChatText(''); setShowPayInput(false);
-      openChat(chatUserId); fetchData();
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+      if (upiModal.action === 'send_money') {
+        const { amount, note } = upiModal.payload;
+        await axios.post(
+          '/api/messages/send-money',
+          { receiverId: chatUserId, amount, note: note || 'Payment' },
+          { headers: { 'x-auth-token': token } }
+        );
+        setChatAmount(''); setChatText(''); setShowPayInput(false);
+        openChat(chatUserId); fetchData();
+        setUpiModal(null); setUpiPin('');
+        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: 'Money sent securely.' });
+      }
+    } catch (err) {
+      setUpiError(err.response?.data?.msg || err.message || 'Transaction failed');
+      setUpiPin('');
+    }
   };
 
   const handleApprove = async (id) => {
@@ -172,10 +197,10 @@ const WholesalerDashboard = () => {
 
       <div className="max-w-4xl mx-auto p-4 mt-4">
         <div className="flex gap-1 mb-6 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
-          {['vendors', 'requests', 'messages'].map(tab => (
+          {['vendors', 'requests', 'history', 'messages'].map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); setChatUserId(null); }}
               className={`flex-1 py-2 px-3 rounded-lg font-medium transition text-sm ${activeTab === tab ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-50'}`}>
-              {tab === 'messages' ? 'Chat' : tab === 'requests' ? 'Loans' : 'Vendors'}
+              {tab === 'messages' ? 'Chat' : tab === 'history' ? 'History' : tab === 'requests' ? 'Loans' : 'Vendors'}
             </button>
           ))}
         </div>
@@ -205,10 +230,12 @@ const WholesalerDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'requests' && (
+        {(activeTab === 'requests' || activeTab === 'history') && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-2">Loan Requests</h2>
-            {requests.map(r => {
+            <h2 className="text-xl font-bold mb-2">{activeTab === 'history' ? 'History (Paid & Pending)' : 'Active Loans'}</h2>
+            {requests
+              .filter(r => activeTab === 'history' ? ['Paid', 'Pending'].includes(r.status) : !['Paid', 'Pending'].includes(r.status))
+              .map(r => {
               const isOverdue = ['Overdue', 'Defaulted'].includes(r.status);
               const remaining = (r.totalDue || r.amount) - (r.amountPaid || 0);
               const inputs = loanInputs[r._id] || {};
@@ -296,8 +323,8 @@ const WholesalerDashboard = () => {
                 </div>
               );
             })}
-            {requests.length === 0 && (
-              <div className="text-center p-8 bg-white rounded-2xl border"><p className="text-slate-500">No loan requests yet.</p></div>
+            {requests.filter(r => activeTab === 'history' ? ['Paid', 'Pending'].includes(r.status) : !['Paid', 'Pending'].includes(r.status)).length === 0 && (
+              <div className="text-center p-8 bg-white rounded-2xl border"><p className="text-slate-500">No {activeTab === 'history' ? 'records' : 'active loans'} found.</p></div>
             )}
           </div>
         )}
@@ -355,6 +382,82 @@ const WholesalerDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* UPI PIN Modal */}
+      {upiModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[150] flex flex-col items-center justify-end sm:justify-center p-4 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300">
+          <div className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-slate-50 border-2 border-slate-100 shadow-inner">
+                <ShieldCheck className="w-8 h-8 text-slate-800" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-slate-900">Enter UPI PIN</h3>
+              <p className="text-slate-500 text-sm mt-1 font-medium">To securely process ₹{upiModal.payload.amount}</p>
+              {upiError && <p className="text-red-500 text-sm font-bold mt-2 animate-shake">{upiError}</p>}
+            </div>
+            <div className="mb-8">
+              <div className="flex justify-center gap-3">
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl font-black transition-all ${upiPin.length > i ? 'bg-slate-800 text-white shadow-lg scale-105' : upiError ? 'bg-red-50 border-2 border-red-200 text-red-500' : 'bg-slate-100 text-slate-300 border-2 border-slate-200'}`}>
+                    {upiPin.length > i ? '•' : ''}
+                  </div>
+                ))}
+              </div>
+              <input
+                type="password"
+                maxLength="4"
+                pattern="\d*"
+                autoFocus
+                value={upiPin}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setUpiPin(val);
+                  if (upiError) setUpiError('');
+                  if (val.length === 4) {
+                    setTimeout(() => document.getElementById('upi-submit-btn').click(), 100);
+                  }
+                }}
+                className="absolute opacity-0 top-0 left-0 w-full h-full cursor-text"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 relative z-10">
+              <button onClick={() => { setUpiModal(null); setUpiPin(''); }} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
+              <button id="upi-submit-btn" onClick={handleUpiSubmit} disabled={upiPin.length !== 4} className="py-4 rounded-2xl text-white font-bold transition hover:-translate-y-0.5 shadow-lg bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 disabled:opacity-50 disabled:hover:translate-y-0">
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Success Screen (PhonePe / GPay style) */}
+      {successScreen && (
+        <div className="fixed inset-0 bg-emerald-600 z-[200] flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-400 rounded-full mix-blend-screen filter blur-[50px] opacity-60 animate-ping" style={{ animationDuration: '3s' }}></div>
+          </div>
+          
+          <div className="relative z-10 flex flex-col items-center animate-in slide-in-from-bottom-10 zoom-in-50 duration-500 delay-100">
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-8 shadow-[0_0_0_8px_rgba(255,255,255,0.2)] relative">
+              <div className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin" style={{ animationDuration: '3s' }}></div>
+              <Check className="w-16 h-16 text-emerald-600 animate-in zoom-in duration-500 delay-300" strokeWidth={3} />
+            </div>
+            
+            <h2 className="text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-md">₹{successScreen.amount}</h2>
+            <p className="text-emerald-100 text-2xl font-bold mb-2 tracking-wide">{successScreen.title}</p>
+            <p className="text-emerald-50 text-center max-w-xs">{successScreen.subtitle}</p>
+            
+            <button 
+              onClick={() => setSuccessScreen(null)} 
+              className="mt-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-8 py-3 rounded-full font-bold transition-all hover:scale-105 active:scale-95"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

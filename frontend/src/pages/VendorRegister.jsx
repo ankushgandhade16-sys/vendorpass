@@ -6,7 +6,7 @@ import { Store, Upload, ArrowLeft, ShieldCheck, User, Lock as LockIcon, Phone, M
 const VendorRegister = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '', fullName: '', phone: '', password: '', email: '', homeAddress: '', businessAddress: '', businessType: '', aadhaar: ''
+    username: '', fullName: '', phone: '', password: '', email: '', homeAddress: '', businessAddress: '', businessType: '', aadhaar: '', upiPin: ''
   });
   const [files, setFiles] = useState({ personalPhoto: null, businessPhoto: null });
   const [error, setError] = useState('');
@@ -96,6 +96,14 @@ const VendorRegister = () => {
                   <div className="relative">
                     <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input type="password" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium" placeholder="Create a strong password" onChange={e => setFormData({...formData, password: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="relative group">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">Set UPI PIN (4-Digit)</label>
+                  <div className="relative">
+                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <input type="password" maxLength="4" pattern="\d{4}" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" placeholder="Enter 4-digit PIN" onChange={e => setFormData({...formData, upiPin: e.target.value})} />
                   </div>
                 </div>
 

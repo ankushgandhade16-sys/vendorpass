@@ -133,14 +133,15 @@ router.post('/:id/repay', auth, async (req, res) => {
       }
     }
 
-    request.amountPaid += amount;
-    const remaining = request.totalDue - request.amountPaid;
+    request.amountPaid = parseFloat((request.amountPaid + amount).toFixed(2));
+    const remaining = parseFloat((request.totalDue - request.amountPaid).toFixed(2));
 
-    if (remaining <= 0) {
+    if (remaining <= 0.01) {  // tolerance for floating point
       request.status = 'Paid';
+      request.amountPaid = request.totalDue; // ensure exact match
       // Unblock vendor
       const vendorUser = await User.findById(req.user.id);
-      if (vendorUser.blocked) {
+      if (vendorUser) {
         vendorUser.blocked = false;
         vendorUser.blockedReason = '';
         await vendorUser.save();
@@ -153,7 +154,7 @@ router.post('/:id/repay', auth, async (req, res) => {
     request.updatedDate = Date.now();
     await request.save();
 
-    res.json({ msg: `Repaid ₹${amount}. Remaining: ₹${Math.max(0, remaining).toFixed(2)}`, loan: request });
+    res.json({ msg: `Repaid ₹${amount}. Remaining: ₹${Math.max(0, remaining).toFixed(2)}`, loan: request, status: request.status });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: 'Server Error' });
