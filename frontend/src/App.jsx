@@ -13,7 +13,7 @@ import PaymentPage from './pages/PaymentPage';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 text-slate-800">
+      <div className="min-h-screen bg-[#F6FBF7] text-slate-800 font-sans">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/vendor/login" element={<VendorLogin />} />

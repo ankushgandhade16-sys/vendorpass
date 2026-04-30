@@ -40,6 +40,9 @@ const VendorDashboard = () => {
   const [wholesalers, setWholesalers] = useState([]);
   const [loans, setLoans] = useState([]);
   const [now, setNow] = useState(new Date());
+  // Simulate modal
+  const [simulateModal, setSimulateModal] = useState(null); // null | 'credit' | 'debit'
+  const [simulateAmount, setSimulateAmount] = useState('');
   // Chat state
   const [conversations, setConversations] = useState([]);
   const [chatUserId, setChatUserId] = useState(null);
@@ -144,14 +147,20 @@ const VendorDashboard = () => {
   };
 
   const handleSimulate = async (type) => {
-    const amount = prompt(`Enter amount to ${type}:`);
-    if (!amount || isNaN(amount)) return;
+    setSimulateAmount('');
+    setSimulateModal(type);
+  };
+
+  const confirmSimulate = async () => {
+    if (!simulateAmount || isNaN(simulateAmount) || Number(simulateAmount) <= 0) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/transactions/simulate', 
-        { amount: Number(amount), type, description: `Simulated ${type}` },
+      await axios.post('/api/transactions/simulate',
+        { amount: Number(simulateAmount), type: simulateModal, description: `${simulateModal === 'credit' ? 'Added' : 'Sent'} ₹${simulateAmount}` },
         { headers: { 'x-auth-token': token } }
       );
+      setSimulateModal(null);
+      setSimulateAmount('');
       fetchData();
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
@@ -208,10 +217,12 @@ const VendorDashboard = () => {
   const profilePicUrl = getPhotoUrl(vendor.personalPhoto);
 
   return (
-    <div className="min-h-screen relative bg-[#F6FBF7] text-slate-800 font-sans pb-20">
-      
+    <div className="min-h-screen relative bg-[#F6FBF7] text-slate-800 font-sans pb-20 overflow-hidden">
+      {/* Background Blobs */}
+      <div className="absolute top-0 -left-20 w-[600px] h-[600px] bg-blue-50/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
+      <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-emerald-50/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
 
-      <div className="relative z-10 max-w-5xl mx-auto min-h-screen flex flex-col">
+      <div className="relative z-10 min-h-screen flex flex-col">
         {/* Blocked Banner */}
         {user.blocked && (
           <div className="bg-red-600 text-white p-4 flex items-center gap-3">
@@ -249,49 +260,51 @@ const VendorDashboard = () => {
 
 
         {/* Content */}
-        <div className="flex-1 px-4 space-y-6 overflow-y-auto pb-6">
+        <div className="flex-1 space-y-6 overflow-y-auto pb-6">
           
           {activeTab === 'home' && (
-            <div className="animate-fade-in pb-8 -mx-4">
-              {/* Hero Banner */}
-              <div className="relative h-48 bg-slate-800 flex items-center justify-center overflow-hidden rounded-b-3xl">
+            <div className="animate-fade-in pb-8">
+              {/* Hero Banner - Tall enough to show full business photo */}
+              <div className="relative h-72 bg-slate-800 flex items-center justify-center overflow-hidden">
                 {photoUrl ? (
-                  <img src={photoUrl} className="absolute inset-0 w-full h-full object-cover opacity-70" alt="Store" />
+                  <img src={photoUrl} className="absolute inset-0 w-full h-full object-cover" alt="Store" />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-800 to-teal-900" />
                 )}
-                <div className="absolute inset-0 bg-black/10" />
+                <div className="absolute inset-0 bg-black/20" />
+                {/* Gradient fade at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/50 to-transparent" />
               </div>
 
-              {/* Overlapping Welcome Card */}
-              <div className="px-4 -mt-8 relative z-20">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
+              {/* Profile Card - sits below the banner with generous spacing */}
+              <div className="px-4 mt-4 relative z-20">
+                <div className="bg-white rounded-3xl p-5 shadow-xl border border-slate-100 flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-200 overflow-hidden border-2 border-white shadow-md flex-shrink-0">
                     {vendor.personalPhoto ? (
                       <img src={profilePicUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-6 h-6 m-3 text-slate-500" />
+                      <User className="w-8 h-8 m-4 text-slate-500" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-slate-500 text-xs">Welcome, {vendor.fullName.split(' ')[0]}</p>
-                    <p className="font-bold text-slate-800 leading-tight">{vendor.fullName}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Vendor ID: {vendor.vendorId}</p>
+                    <p className="text-slate-400 text-xs font-medium">Welcome back 👋</p>
+                    <p className="font-extrabold text-slate-900 text-lg leading-tight">{vendor.fullName}</p>
+                    <p className="text-[11px] text-emerald-600 font-bold mt-0.5">ID: {vendor.vendorId}</p>
                   </div>
-                  <button onClick={openEditModal} className="bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap hover:bg-emerald-100 transition">Edit Profile</button>
+                  <button onClick={openEditModal} className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap shadow-md shadow-emerald-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">Edit Profile</button>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 mt-6 px-4">
                 {/* Sales Overview Chart */}
                 <div>
-                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-full">
                     <div className="flex justify-between items-center mb-6">
-                      <h3 className="font-bold text-slate-800">Your Track</h3>
+                      <h3 className="font-bold text-slate-800 text-lg">Your Track</h3>
                       <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     {/* Simple CSS Bar Chart */}
-                    <div className="flex items-end justify-between h-32 gap-2">
+                    <div className="flex items-end justify-between h-36 gap-2">
                       {[
                         { day: 'MON', value: 30 },
                         { day: 'TUE', value: 45 },
@@ -304,14 +317,14 @@ const VendorDashboard = () => {
                         <div key={item.day} className="flex flex-col items-center flex-1 gap-2">
                           <div className="w-full bg-slate-50 rounded-t-sm flex items-end justify-center h-full relative group">
                             <div 
-                              className={`w-full rounded-t-sm transition-all duration-500 ${item.active ? 'bg-emerald-500 shadow-md' : 'bg-emerald-200 opacity-70'}`} 
+                              className={`w-full rounded-t-xl transition-all duration-500 ${item.active ? 'bg-gradient-to-t from-emerald-500 to-emerald-400 shadow-md' : 'bg-emerald-100 hover:bg-emerald-200'}`} 
                               style={{ height: `${item.value}%` }}
                             />
-                            <div className="absolute -top-8 bg-slate-800 text-slate-800 text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                            <div className="absolute -top-8 bg-slate-800 text-white text-[10px] px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none">
                               ₹{item.value * 100}
                             </div>
                           </div>
-                          <span className="text-[9px] font-bold text-slate-500">{item.day}</span>
+                          <span className="text-[9px] font-bold text-slate-400">{item.day}</span>
                         </div>
                       ))}
                     </div>
@@ -320,9 +333,9 @@ const VendorDashboard = () => {
 
                 {/* Trust Score */}
                 <div>
-                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-full">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-slate-800">Trust Score</h3>
+                      <h3 className="font-bold text-slate-800 text-lg">Trust Score</h3>
                       <ShieldCheck className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="flex flex-col items-center justify-center relative py-4">
@@ -624,9 +637,43 @@ const VendorDashboard = () => {
 
 </div>
 
+        {/* Add Money / Send Money Modal */}
+        {simulateModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4" onClick={() => setSimulateModal(null)}>
+            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="text-center mb-6">
+                <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 ${simulateModal === 'credit' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                  {simulateModal === 'credit' ? <ArrowDownRight className="w-8 h-8" /> : <ArrowUpRight className="w-8 h-8" />}
+                </div>
+                <h3 className="text-2xl font-extrabold text-slate-900">{simulateModal === 'credit' ? 'Add Money' : 'Send Money'}</h3>
+                <p className="text-slate-400 text-sm mt-1">{simulateModal === 'credit' ? 'Credit your wallet balance' : 'Debit from your wallet balance'}</p>
+              </div>
+              <div className="relative mb-6">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-3xl font-black text-slate-300">₹</span>
+                <input
+                  type="number"
+                  min="1"
+                  autoFocus
+                  value={simulateAmount}
+                  onChange={e => setSimulateAmount(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && confirmSimulate()}
+                  placeholder="0"
+                  className="w-full pl-14 pr-4 py-5 text-4xl font-black text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-center"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setSimulateModal(null)} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button onClick={confirmSimulate} className={`py-4 rounded-2xl text-white font-bold transition hover:-translate-y-0.5 shadow-lg ${simulateModal === 'credit' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200' : 'bg-red-500 hover:bg-red-600 shadow-red-200'}`}>
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bottom Nav */}
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-50">
-          <div className="max-w-5xl mx-auto flex justify-around p-4">
+          <div className="flex justify-around p-4">
             <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-blue-400' : 'text-slate-500'}`}>
               <Home className="w-6 h-6" />
               <span className="text-[10px] font-semibold">Home</span>

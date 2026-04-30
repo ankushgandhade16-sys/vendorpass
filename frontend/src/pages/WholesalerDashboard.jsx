@@ -133,24 +133,40 @@ const WholesalerDashboard = () => {
   const wallet = user.wallet;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-      <header className="bg-emerald-600 text-white p-6 rounded-b-3xl shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10"><Building2 className="w-40 h-40" /></div>
+    <div className="min-h-screen bg-[#F6FBF7] text-slate-900 pb-20 relative overflow-hidden">
+      {/* Background Blobs */}
+      <div className="absolute top-0 -left-20 w-[600px] h-[600px] bg-emerald-50/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
+      <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-teal-50/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-4000"></div>
+
+      <header className="bg-slate-900 text-white p-8 rounded-b-[3rem] shadow-2xl relative overflow-hidden z-10">
+        <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12"><Building2 className="w-56 h-56" /></div>
         <div className="flex justify-between items-center relative z-10">
-          <div>
-            <p className="text-emerald-100 text-sm">Dashboard</p>
-            <h1 className="text-2xl font-bold">{wholesaler.businessName}</h1>
+          <div className="flex items-center gap-4">
+             <div className="bg-emerald-500/20 p-3 rounded-2xl border border-emerald-500/30">
+               <Building2 className="w-8 h-8 text-emerald-400" />
+             </div>
+             <div>
+               <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Premium Distributor</p>
+               <h1 className="text-3xl font-extrabold tracking-tight">{wholesaler.businessName}</h1>
+             </div>
           </div>
-          <button onClick={() => { localStorage.clear(); navigate('/'); }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
-            <LogOut className="w-5 h-5 text-white" />
+          <button onClick={() => { localStorage.clear(); navigate('/'); }} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all hover:scale-110 active:scale-95 border border-white/10">
+            <LogOut className="w-6 h-6 text-white" />
           </button>
         </div>
-        <div className="mt-6 bg-emerald-700/50 p-4 rounded-xl flex items-center justify-between border border-emerald-500">
-          <div className="flex items-center gap-3">
-            <Wallet className="w-6 h-6 text-emerald-200" />
-            <span className="text-emerald-50">Wallet Balance</span>
+        <div className="mt-8 bg-white/5 backdrop-blur-md p-6 rounded-3xl flex items-center justify-between border border-white/10 shadow-inner">
+          <div className="flex items-center gap-4">
+            <div className="bg-emerald-500 p-3 rounded-2xl shadow-lg shadow-emerald-500/20">
+              <Wallet className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-medium">Available Balance</p>
+              <p className="text-emerald-50 text-sm font-bold">Business Wallet</p>
+            </div>
           </div>
-          <span className="text-2xl font-bold">₹{wallet?.balance || 0}</span>
+          <div className="text-right">
+             <span className="text-3xl font-black tracking-tighter text-white">₹{wallet?.balance || 0}</span>
+          </div>
         </div>
       </header>
 
