@@ -14,7 +14,6 @@ router.post('/request', auth, async (req, res) => {
     if (req.user.role !== 'vendor') return res.status(403).json({ msg: 'Only vendors can request credit' });
     if (user.blocked) return res.status(403).json({ msg: 'Your account is blocked due to unpaid loans.' });
 
-    // Find the wholesaler's user account
     const Wholesaler = require('../models/Wholesaler');
     const wholesaler = await Wholesaler.findById(wholesalerId);
 
@@ -24,15 +23,13 @@ router.post('/request', auth, async (req, res) => {
       wholesaler: wholesalerId,
       wholesalerUser: wholesaler ? wholesaler.user : null,
       amount,
-      interestRate: 5,
-      totalDue: amount * 1.05, // 5% interest
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      status: 'Pending'
     });
     await newRequest.save();
     res.json(newRequest);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -49,27 +46,46 @@ router.get('/', auth, async (req, res) => {
     res.json(requests || []);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
-// Update request status (Wholesaler approves/rejects)
+// Wholesaler approves with interest rate and duration (in minutes)
 router.put('/:id', auth, async (req, res) => {
-  const { status } = req.body;
+  const { status, interestRate, durationMinutes } = req.body;
   try {
     if (req.user.role !== 'wholesaler') return res.status(403).json({ msg: 'Not authorized' });
     const request = await CreditRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ msg: 'Not found' });
     
     if (status === 'Approved') {
-      // Disburse loan to vendor's wallet
+      const rate = interestRate || 5;
+      const mins = durationMinutes || 5;
+      
+      request.interestRate = rate;
+      request.totalDue = request.amount * (1 + rate / 100);
+      request.durationMinutes = mins;
+      request.dueDate = new Date(Date.now() + mins * 60 * 1000);
+      request.status = 'Active';
+      request.approvedDate = Date.now();
+
+      // Disburse loan — deduct from wholesaler, credit to vendor
+      const wholesalerWallet = await Wallet.findOne({ user: request.wholesalerUser });
+      if (wholesalerWallet) {
+        if (wholesalerWallet.balance < request.amount) {
+          return res.status(400).json({ msg: 'Insufficient balance to disburse loan' });
+        }
+        wholesalerWallet.balance -= request.amount;
+        await wholesalerWallet.save();
+        await new Transaction({ wallet: wholesalerWallet._id, amount: request.amount, type: 'debit', description: `Loan disbursed to vendor` }).save();
+      }
+
       const vendorWallet = await Wallet.findOne({ user: request.vendorUser });
       if (vendorWallet) {
         vendorWallet.balance += request.amount;
         await vendorWallet.save();
-        await new Transaction({ wallet: vendorWallet._id, amount: request.amount, type: 'credit', description: 'Loan disbursed from wholesaler' }).save();
+        await new Transaction({ wallet: vendorWallet._id, amount: request.amount, type: 'credit', description: `Loan received from wholesaler` }).save();
       }
-      request.status = 'Active';
     } else {
       request.status = status;
     }
@@ -79,7 +95,7 @@ router.put('/:id', auth, async (req, res) => {
     res.json(request);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -118,7 +134,7 @@ router.post('/:id/repay', auth, async (req, res) => {
 
     if (remaining <= 0) {
       request.status = 'Paid';
-      // Unblock vendor if they were blocked
+      // Unblock vendor
       const vendorUser = await User.findById(req.user.id);
       if (vendorUser.blocked) {
         vendorUser.blocked = false;
@@ -137,29 +153,29 @@ router.post('/:id/repay', auth, async (req, res) => {
   }
 });
 
-// Check overdue loans (called periodically or on dashboard load)
+// Check overdue loans (uses MINUTES for hackathon demo)
 router.post('/check-overdue', auth, async (req, res) => {
   try {
     const now = new Date();
     const activeLoans = await CreditRequest.find({ status: { $in: ['Active', 'Overdue'] } });
 
     for (const loan of activeLoans) {
-      if (now > loan.dueDate) {
-        const daysOverdue = Math.ceil((now - loan.dueDate) / (1000 * 60 * 60 * 24));
+      if (loan.dueDate && now > loan.dueDate) {
+        const minutesOverdue = Math.ceil((now - loan.dueDate) / (1000 * 60));
         
-        // Increase interest by 2% for each week overdue
-        const extraInterest = Math.floor(daysOverdue / 7) * 2;
-        const newRate = loan.interestRate + extraInterest;
+        // Increase interest by 2% for every 2 minutes overdue (fast for demo)
+        const extraInterest = Math.floor(minutesOverdue / 2) * 2;
+        const newRate = (loan.interestRate || 5) + extraInterest;
         loan.totalDue = loan.amount * (1 + newRate / 100);
         loan.interestRate = newRate;
 
-        if (daysOverdue > 30) {
-          // Default after 30 days overdue — block vendor
+        if (minutesOverdue > 10) {
+          // Default after 10 minutes overdue — block vendor
           loan.status = 'Defaulted';
           const vendorUser = await User.findById(loan.vendorUser);
-          if (vendorUser) {
+          if (vendorUser && !vendorUser.blocked) {
             vendorUser.blocked = true;
-            vendorUser.blockedReason = `Loan of ₹${loan.amount} defaulted. Total due: ₹${loan.totalDue.toFixed(2)}`;
+            vendorUser.blockedReason = `Loan of ₹${loan.amount} defaulted. Total due: ₹${loan.totalDue.toFixed(2)}. Pay to unblock.`;
             await vendorUser.save();
           }
         } else {
