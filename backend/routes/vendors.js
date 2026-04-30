@@ -24,4 +24,24 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Update vendor profile
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { fullName, email, businessAddress, businessType } = req.body;
+    let vendor = await Vendor.findOne({ user: req.user.id });
+    if (!vendor) return res.status(404).json({ msg: 'Vendor profile not found' });
+
+    if (fullName) vendor.fullName = fullName;
+    if (email) vendor.email = email;
+    if (businessAddress) vendor.businessAddress = businessAddress;
+    if (businessType) vendor.businessType = businessType;
+
+    await vendor.save();
+    res.json(vendor);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
