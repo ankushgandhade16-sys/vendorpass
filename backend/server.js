@@ -19,6 +19,7 @@ app.use('/api/vendors', require('./routes/vendors'));
 app.use('/api/wholesalers', require('./routes/wholesalers'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/credit', require('./routes/credit'));
+app.use('/api/messages', require('./routes/messages'));
 
 // Connect to MongoDB using mongodb-memory-server
 const { MongoMemoryServer } = require('mongodb-memory-server');

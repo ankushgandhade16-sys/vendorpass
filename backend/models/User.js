@@ -7,6 +7,8 @@ const UserSchema = new mongoose.Schema({
   vendorProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   wholesalerProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'Wholesaler' },
   wallet: { type: mongoose.Schema.Types.ObjectId, ref: 'Wallet' },
+  blocked: { type: Boolean, default: false },
+  blockedReason: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

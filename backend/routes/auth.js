@@ -8,11 +8,18 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
+
+// Ensure uploads dir exists
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    cb(null, uploadsDir)
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname))
@@ -24,6 +31,10 @@ router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, 
   try {
     const { username, password, role, ...profileData } = req.body;
     
+    if (!username || !password || !role) {
+      return res.status(400).json({ message: 'Username, password, and role are required' });
+    }
+
     let user = await User.findOne({ username });
     if (user) return res.status(400).json({ message: 'User already exists' });
 
@@ -41,14 +52,14 @@ router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, 
       const vendorId = 'VEND-' + crypto.randomBytes(3).toString('hex').toUpperCase();
       const newVendor = new Vendor({
         user: user._id,
-        fullName: profileData.fullName,
-        email: profileData.email,
-        homeAddress: profileData.homeAddress,
-        businessAddress: profileData.businessAddress,
-        businessType: profileData.businessType,
-        aadhaar: profileData.aadhaar,
-        personalPhoto: req.files['personalPhoto'] ? req.files['personalPhoto'][0].path : '',
-        businessPhoto: req.files['businessPhoto'] ? req.files['businessPhoto'][0].path : '',
+        fullName: profileData.fullName || username,
+        email: profileData.email || '',
+        homeAddress: profileData.homeAddress || '',
+        businessAddress: profileData.businessAddress || '',
+        businessType: profileData.businessType || '',
+        aadhaar: profileData.aadhaar || '',
+        personalPhoto: req.files && req.files['personalPhoto'] ? req.files['personalPhoto'][0].path : '',
+        businessPhoto: req.files && req.files['businessPhoto'] ? req.files['businessPhoto'][0].path : '',
         vendorId,
         qrCode: vendorId
       });
@@ -57,13 +68,13 @@ router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, 
     } else if (role === 'wholesaler') {
       const newWholesaler = new Wholesaler({
         user: user._id,
-        fullName: profileData.fullName,
-        email: profileData.email,
-        businessName: profileData.businessName,
-        address: profileData.address,
-        productCategories: profileData.productCategories ? profileData.productCategories.split(',') : [],
-        gst: profileData.gst,
-        photos: req.files['photos'] ? req.files['photos'].map(f => f.path) : []
+        fullName: profileData.fullName || username,
+        email: profileData.email || '',
+        businessName: profileData.businessName || username + ' Business',
+        address: profileData.address || '',
+        productCategories: profileData.productCategories ? profileData.productCategories.split(',').map(s => s.trim()) : [],
+        gst: profileData.gst || '',
+        photos: req.files && req.files['photos'] ? req.files['photos'].map(f => f.path) : []
       });
       await newWholesaler.save();
       user.wholesalerProfile = newWholesaler._id;
@@ -78,8 +89,8 @@ router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, 
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
+    console.error('Registration error:', err.message);
+    res.status(500).json({ message: 'Server error: ' + err.message });
   }
 });
 
@@ -100,7 +111,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
