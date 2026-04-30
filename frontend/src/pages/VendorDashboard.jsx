@@ -11,6 +11,7 @@ const VendorDashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [wholesalers, setWholesalers] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [now, setNow] = useState(new Date());
   // Chat state
   const [conversations, setConversations] = useState([]);
   const [chatUserId, setChatUserId] = useState(null);
@@ -26,6 +27,19 @@ const VendorDashboard = () => {
   useEffect(() => {
     if (activeTab === 'messages') fetchConversations();
     if (activeTab === 'credit') fetchLoans();
+  }, [activeTab]);
+
+  // Live countdown timer — ticks every second
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Re-check overdue every 30 seconds when on loans tab
+  useEffect(() => {
+    if (activeTab !== 'credit') return;
+    const interval = setInterval(() => fetchLoans(), 30000);
+    return () => clearInterval(interval);
   }, [activeTab]);
 
   const fetchData = async () => {
@@ -288,10 +302,15 @@ const VendorDashboard = () => {
           {activeTab === 'credit' && (
             <div className="space-y-4">
               <h2 className="text-2xl font-bold mb-2">My Loans</h2>
-              <p className="text-sm text-slate-400 mb-4">Manage your credit requests and active loans</p>
+              <p className="text-sm text-slate-400 mb-4">Manage your loans and repayments</p>
               {loans.map(loan => {
                 const remaining = (loan.totalDue || loan.amount) - (loan.amountPaid || 0);
                 const isOverdue = ['Overdue', 'Defaulted'].includes(loan.status);
+                const diffMs = loan.dueDate ? new Date(loan.dueDate) - now : 0;
+                const totalSecsLeft = Math.max(0, Math.floor(diffMs / 1000));
+                const minsLeft = Math.floor(totalSecsLeft / 60);
+                const secsLeft = totalSecsLeft % 60;
+                const timerStr = `${minsLeft}:${secsLeft.toString().padStart(2, '0')}`;
                 return (
                   <div key={loan._id} className={`p-5 rounded-2xl border ${isOverdue ? 'bg-red-900/20 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
                     <div className="flex justify-between items-start mb-3">
@@ -307,6 +326,13 @@ const VendorDashboard = () => {
                         'bg-slate-500/20 text-slate-400'
                       }`}>{loan.status}</span>
                     </div>
+
+                    {loan.status === 'Pending' && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-sm text-amber-300">
+                        ⏳ Waiting for wholesaler to set terms and approve...
+                      </div>
+                    )}
+
                     {['Active', 'Overdue', 'Defaulted'].includes(loan.status) && (
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
@@ -314,30 +340,42 @@ const VendorDashboard = () => {
                           <span className={isOverdue ? 'text-red-400 font-bold' : ''}>{loan.interestRate}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Total Due</span>
-                          <span className="font-bold">₹{(loan.totalDue || 0).toFixed(2)}</span>
+                          <span className="text-slate-400">Total Due (with interest)</span>
+                          <span className="font-bold text-white">₹{(loan.totalDue || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Paid</span>
+                          <span className="text-slate-400">Already Paid</span>
                           <span className="text-emerald-400">₹{loan.amountPaid || 0}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Remaining</span>
-                          <span className="font-bold text-white">₹{remaining.toFixed(2)}</span>
+                        <div className="flex justify-between text-sm bg-white/5 p-2 rounded-lg">
+                          <span className="text-slate-300 font-medium">💰 Still Owe</span>
+                          <span className="font-bold text-lg text-white">₹{remaining.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Due Date</span>
-                          <span className={isOverdue ? 'text-red-400' : ''}>{new Date(loan.dueDate).toLocaleDateString()}</span>
+                          <span className="text-slate-400">Due At</span>
+                          <span className={isOverdue ? 'text-red-400 font-bold' : ''}>{new Date(loan.dueDate).toLocaleTimeString()}</span>
                         </div>
+                        {loan.dueDate && loan.status === 'Active' && (
+                          <div className={`flex justify-between text-sm p-2 rounded-lg ${totalSecsLeft <= 120 ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
+                            <span className="text-slate-300">⏱️ Time Left</span>
+                            <span className={`font-bold text-xl ${totalSecsLeft <= 120 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>{timerStr}</span>
+                          </div>
+                        )}
                         {isOverdue && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-2 text-sm text-red-300">
                             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                            Interest increases 2% every week overdue. Account blocks after 30 days.
+                            <span>Interest increases +2% every 2 min overdue. Account blocks after 10 min!</span>
                           </div>
                         )}
-                        <button onClick={() => handleRepayLoan(loan._id)} className="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-2">
-                          Repay Now
+                        <button onClick={() => handleRepayLoan(loan._id)} className="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-2 text-lg">
+                          💳 Repay ₹{remaining.toFixed(2)} Now
                         </button>
+                      </div>
+                    )}
+
+                    {loan.status === 'Paid' && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-sm text-emerald-400 font-medium">
+                        ✅ Fully repaid — ₹{loan.amountPaid} paid
                       </div>
                     )}
                   </div>
@@ -346,6 +384,7 @@ const VendorDashboard = () => {
               {loans.length === 0 && (
                 <div className="text-center p-8 bg-white/5 border border-white/10 rounded-3xl">
                   <p className="text-slate-400">No loan requests yet.</p>
+                  <p className="text-sm text-slate-500 mt-1">Go to Search tab to find wholesalers and request a loan!</p>
                 </div>
               )}
             </div>

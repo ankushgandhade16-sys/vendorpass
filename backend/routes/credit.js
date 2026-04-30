@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
 const auth = require('../middleware/auth');
+const { updateTrustScore } = require('../utils/trustScore');
 
 // Request credit (Vendor only)
 router.post('/request', auth, async (req, res) => {
@@ -141,6 +142,9 @@ router.post('/:id/repay', auth, async (req, res) => {
         vendorUser.blockedReason = '';
         await vendorUser.save();
       }
+      // Trust score: +20 if paid before due, +10 if paid after due
+      const paidBeforeDue = request.dueDate && new Date() <= new Date(request.dueDate);
+      await updateTrustScore(request.vendor, paidBeforeDue ? 20 : 10);
     }
 
     request.updatedDate = Date.now();
@@ -178,6 +182,8 @@ router.post('/check-overdue', auth, async (req, res) => {
             vendorUser.blockedReason = `Loan of ₹${loan.amount} defaulted. Total due: ₹${loan.totalDue.toFixed(2)}. Pay to unblock.`;
             await vendorUser.save();
           }
+          // Trust score: -30 for defaulting
+          await updateTrustScore(loan.vendor, -30);
         } else {
           loan.status = 'Overdue';
         }

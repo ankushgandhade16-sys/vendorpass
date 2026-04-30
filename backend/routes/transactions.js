@@ -4,6 +4,7 @@ const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { updateTrustScore } = require('../utils/trustScore');
 
 // Get my transactions
 router.get('/', auth, async (req, res) => {
@@ -28,6 +29,8 @@ router.post('/simulate', auth, async (req, res) => {
       await userWallet.save();
       const tx = new Transaction({ wallet: userWallet._id, amount, type: 'credit', description });
       await tx.save();
+      // Trust score +5 for vendor transactions
+      if (user.vendorProfile) await updateTrustScore(user.vendorProfile, 5);
       return res.json({ msg: 'Simulated credit successful', balance: userWallet.balance });
     }
 
@@ -49,6 +52,8 @@ router.post('/simulate', auth, async (req, res) => {
         }
       }
 
+      // Trust score +5 for vendor transactions
+      if (user.vendorProfile) await updateTrustScore(user.vendorProfile, 5);
       return res.json({ msg: 'Simulated debit/transfer successful', balance: userWallet.balance });
     }
   } catch (err) {
