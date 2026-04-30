@@ -12,6 +12,7 @@ router.post('/request', auth, async (req, res) => {
   const { wholesalerId, amount } = req.body;
   try {
     const user = await User.findById(req.user.id).populate('vendorProfile');
+    if (!user) return res.status(401).json({ msg: 'User not found' });
     if (req.user.role !== 'vendor') return res.status(403).json({ msg: 'Only vendors can request credit' });
     if (user.blocked) return res.status(403).json({ msg: 'Your account is blocked due to unpaid loans.' });
 
@@ -38,6 +39,7 @@ router.post('/request', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(401).json({ msg: 'User not found' });
     let requests;
     if (req.user.role === 'vendor') {
       requests = await CreditRequest.find({ vendor: user.vendorProfile }).populate('wholesaler');
@@ -63,6 +65,7 @@ router.put('/:id', auth, async (req, res) => {
       const rate = interestRate || 5;
       const mins = durationMinutes || 5;
       
+      request.baseInterestRate = rate;
       request.interestRate = rate;
       request.totalDue = request.amount * (1 + rate / 100);
       request.durationMinutes = mins;
@@ -169,9 +172,14 @@ router.post('/check-overdue', auth, async (req, res) => {
         
         // Increase interest by 2% for every 2 minutes overdue (fast for demo)
         const extraInterest = Math.floor(minutesOverdue / 2) * 2;
-        const newRate = (loan.interestRate || 5) + extraInterest;
-        loan.totalDue = loan.amount * (1 + newRate / 100);
-        loan.interestRate = newRate;
+        const baseRate = loan.baseInterestRate || 5;
+        const newRate = baseRate + extraInterest;
+        
+        // Only update if the rate actually changed
+        if (newRate !== loan.interestRate) {
+          loan.interestRate = newRate;
+          loan.totalDue = loan.amount * (1 + newRate / 100);
+        }
 
         if (minutesOverdue > 10) {
           // Default after 10 minutes overdue — block vendor

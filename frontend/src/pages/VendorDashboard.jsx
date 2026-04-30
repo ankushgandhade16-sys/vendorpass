@@ -286,6 +286,7 @@ const VendorDashboard = () => {
                 {wholesalers.map(ws => (
                   <div key={ws._id} className="bg-white/10 p-5 rounded-2xl border border-white/10">
                     <h3 className="font-bold text-lg">{ws.businessName}</h3>
+                    <p className="text-sm text-emerald-400 mb-1">👤 {ws.fullName}</p>
                     <p className="text-sm text-slate-400 mb-3">{ws.productCategories?.join(', ')}</p>
                     <div className="flex gap-2">
                       <button onClick={() => handleRequestCredit(ws._id)} className="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded-xl font-medium transition">Request Loan</button>

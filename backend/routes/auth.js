@@ -122,6 +122,7 @@ router.get('/me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.user.id).populate('vendorProfile').populate('wholesalerProfile').populate('wallet');
+    if (!user) return res.status(401).json({ msg: 'Token is not valid' });
     res.json(user);
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });

@@ -6,6 +6,7 @@ const CreditRequestSchema = new mongoose.Schema({
   wholesaler: { type: mongoose.Schema.Types.ObjectId, ref: 'Wholesaler', required: true },
   wholesalerUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   amount: { type: Number, required: true },
+  baseInterestRate: { type: Number, default: 0 },
   interestRate: { type: Number, default: 0 },
   totalDue: { type: Number, default: 0 },
   amountPaid: { type: Number, default: 0 },
