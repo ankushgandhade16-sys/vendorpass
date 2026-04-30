@@ -20,17 +20,17 @@ const VendorDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) return navigate('/');
 
-      const res = await axios.get('http://localhost:5000/api/auth/me', {
+      const res = await axios.get('/api/auth/me', {
         headers: { 'x-auth-token': token }
       });
       setUser(res.data);
 
-      const txRes = await axios.get('http://localhost:5000/api/transactions', {
+      const txRes = await axios.get('/api/transactions', {
         headers: { 'x-auth-token': token }
       });
       setTransactions(txRes.data);
 
-      const wsRes = await axios.get('http://localhost:5000/api/wholesalers', {
+      const wsRes = await axios.get('/api/wholesalers', {
         headers: { 'x-auth-token': token }
       });
       setWholesalers(wsRes.data);
@@ -45,7 +45,7 @@ const VendorDashboard = () => {
     if (!amount || isNaN(amount)) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/transactions/simulate', 
+      await axios.post('/api/transactions/simulate', 
         { amount: Number(amount), type, description: `Simulated ${type}` },
         { headers: { 'x-auth-token': token } }
       );
@@ -60,7 +60,7 @@ const VendorDashboard = () => {
     if (!amount || isNaN(amount)) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/credit/request', 
+      await axios.post('/api/credit/request', 
         { wholesalerId, amount: Number(amount) },
         { headers: { 'x-auth-token': token } }
       );
@@ -74,7 +74,7 @@ const VendorDashboard = () => {
 
   const vendor = user.vendorProfile;
   const wallet = user.wallet;
-  const photoUrl = vendor.businessPhoto ? `http://localhost:5000/${vendor.businessPhoto.replace(/\\/g, '/')}` : '';
+  const photoUrl = vendor.businessPhoto ? `/${vendor.businessPhoto.replace(/\\/g, '/')}` : '';
 
   return (
     <div className="min-h-screen relative bg-slate-900 text-slate-100 font-sans pb-20">
@@ -93,7 +93,7 @@ const VendorDashboard = () => {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-blue-500 overflow-hidden border-2 border-white/20">
               {vendor.personalPhoto ? (
-                <img src={`http://localhost:5000/${vendor.personalPhoto.replace(/\\/g, '/')}`} alt="Profile" className="w-full h-full object-cover" />
+                <img src={`/${vendor.personalPhoto.replace(/\\/g, '/')}`} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-8 h-8 m-1.5 text-white/80" />
               )}
@@ -150,7 +150,7 @@ const VendorDashboard = () => {
               <div className="bg-white/5 border border-white/10 p-6 rounded-3xl text-center shadow-lg">
                 <p className="text-sm text-slate-400 mb-4 font-medium uppercase tracking-wider">My Receiving QR</p>
                 <div className="bg-white p-4 rounded-2xl inline-block shadow-xl">
-                  <QRCodeSVG value={vendor.vendorId} size={160} />
+                  <QRCodeSVG value={`${window.location.origin}/pay/${vendor.vendorId}`} size={160} />
                 </div>
                 <p className="mt-4 text-slate-300 text-sm">Show this QR to receive payments securely.</p>
               </div>

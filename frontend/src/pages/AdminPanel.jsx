@@ -17,9 +17,9 @@ const AdminPanel = () => {
     try {
       const token = localStorage.getItem('token');
       // In a real app we'd verify admin role, but this is a hackathon MVP
-      const vRes = await axios.get('http://localhost:5000/api/vendors', { headers: { 'x-auth-token': token } });
+      const vRes = await axios.get('/api/vendors', { headers: { 'x-auth-token': token } });
       setVendors(vRes.data);
-      const wRes = await axios.get('http://localhost:5000/api/wholesalers', { headers: { 'x-auth-token': token } });
+      const wRes = await axios.get('/api/wholesalers', { headers: { 'x-auth-token': token } });
       setWholesalers(wRes.data);
     } catch (err) {
       console.error(err);

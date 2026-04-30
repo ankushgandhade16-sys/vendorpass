@@ -19,17 +19,17 @@ const WholesalerDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) return navigate('/');
 
-      const res = await axios.get('http://localhost:5000/api/auth/me', {
+      const res = await axios.get('/api/auth/me', {
         headers: { 'x-auth-token': token }
       });
       setUser(res.data);
 
-      const venRes = await axios.get('http://localhost:5000/api/vendors', {
+      const venRes = await axios.get('/api/vendors', {
         headers: { 'x-auth-token': token }
       });
       setVendors(venRes.data);
 
-      const reqRes = await axios.get('http://localhost:5000/api/credit', {
+      const reqRes = await axios.get('/api/credit', {
         headers: { 'x-auth-token': token }
       });
       setRequests(reqRes.data);
@@ -42,7 +42,7 @@ const WholesalerDashboard = () => {
   const handleStatusUpdate = async (id, status) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/credit/${id}`, { status }, {
+      await axios.put(`/api/credit/${id}`, { status }, {
         headers: { 'x-auth-token': token }
       });
       fetchData();
@@ -91,7 +91,7 @@ const WholesalerDashboard = () => {
               <div key={v._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex gap-4">
                 <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
                   {v.personalPhoto ? (
-                    <img src={`http://localhost:5000/${v.personalPhoto.replace(/\\/g, '/')}`} className="w-full h-full object-cover" alt="Vendor" />
+                    <img src={`/${v.personalPhoto.replace(/\\/g, '/')}`} className="w-full h-full object-cover" alt="Vendor" />
                   ) : <Users className="w-8 h-8 m-4 text-slate-400" />}
                 </div>
                 <div className="flex-1">

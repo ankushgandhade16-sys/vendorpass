@@ -57,4 +57,33 @@ router.post('/simulate', auth, async (req, res) => {
   }
 });
 
+// Public payment route (No auth required for demo)
+router.post('/pay/:vendorId', async (req, res) => {
+  const { amount } = req.body;
+  try {
+    const Vendor = require('../models/Vendor');
+    const vendor = await Vendor.findOne({ vendorId: req.params.vendorId }).populate('user');
+    if (!vendor) return res.status(404).json({ msg: 'Vendor not found' });
+
+    let vendorWallet = await Wallet.findOne({ user: vendor.user._id });
+    if (!vendorWallet) return res.status(404).json({ msg: 'Vendor wallet not found' });
+
+    vendorWallet.balance += amount;
+    await vendorWallet.save();
+
+    const tx = new Transaction({ 
+      wallet: vendorWallet._id, 
+      amount, 
+      type: 'credit', 
+      description: 'Customer Payment (QR)' 
+    });
+    await tx.save();
+
+    res.json({ msg: 'Payment successful!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

@@ -20,7 +20,7 @@ const VendorRegister = () => {
     if (files.businessPhoto) data.append('businessPhoto', files.businessPhoto);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', data, {
+      const res = await axios.post('/api/auth/register', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       localStorage.setItem('token', res.data.token);

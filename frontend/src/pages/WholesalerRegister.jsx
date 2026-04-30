@@ -17,7 +17,7 @@ const WholesalerRegister = () => {
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', data, {
+      const res = await axios.post('/api/auth/register', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       localStorage.setItem('token', res.data.token);

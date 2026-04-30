@@ -8,6 +8,7 @@ import WholesalerLogin from './pages/WholesalerLogin';
 import WholesalerRegister from './pages/WholesalerRegister';
 import WholesalerDashboard from './pages/WholesalerDashboard';
 import AdminPanel from './pages/AdminPanel';
+import PaymentPage from './pages/PaymentPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/wholesaler/register" element={<WholesalerRegister />} />
           <Route path="/wholesaler/dashboard" element={<WholesalerDashboard />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/pay/:vendorId" element={<PaymentPage />} />
         </Routes>
       </div>
     </Router>
