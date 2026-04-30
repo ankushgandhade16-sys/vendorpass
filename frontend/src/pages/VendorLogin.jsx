@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Store, User, Lock as LockIcon, ArrowLeft, Sparkles } from 'lucide-react';
+import { Store, User, Lock as LockIcon, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const VendorLogin = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
@@ -35,9 +38,12 @@ const VendorLogin = () => {
       <div className="absolute bottom-0 -right-20 w-96 h-96 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000"></div>
 
-      <Link to="/" className="absolute top-10 left-10 text-slate-500 hover:text-slate-900 flex items-center gap-2 font-bold transition-all hover:-translate-x-1">
-        <ArrowLeft className="w-5 h-5" /> Back
-      </Link>
+      <div className="absolute top-10 left-10 flex items-center gap-6 z-20">
+        <Link to="/" className="text-slate-500 hover:text-slate-900 flex items-center gap-2 font-bold transition-all hover:-translate-x-1">
+          <ArrowLeft className="w-5 h-5" /> {t('back') || 'Back'}
+        </Link>
+        <LanguageSelector />
+      </div>
       
       <div className="card w-full max-w-md relative z-10">
         <div className="text-center mb-10">
@@ -50,8 +56,8 @@ const VendorLogin = () => {
               <span className="text-[8px]">✦</span>
             </div>
           </div>
-          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Vendor Login</h2>
-          <p className="text-slate-400 mt-3 font-medium">Welcome back to VendorPass</p>
+          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">{t('vendor')} {t('login')}</h2>
+          <p className="text-slate-400 mt-3 font-medium">{t('welcome')} to VendorPass</p>
         </div>
 
         {error && (
@@ -63,7 +69,7 @@ const VendorLogin = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-indigo-700 mb-2 px-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Username
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> {t('username')}
             </label>
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-400" />
@@ -71,7 +77,7 @@ const VendorLogin = () => {
                 type="text" 
                 required
                 className="input-username w-full pl-12 pr-4 py-4 rounded-2xl font-medium"
-                placeholder="Enter your username"
+                placeholder={t('username')}
                 onChange={e => setFormData({...formData, username: e.target.value})}
               />
             </div>
@@ -79,7 +85,7 @@ const VendorLogin = () => {
 
           <div>
             <label className="block text-sm font-bold text-purple-700 mb-2 px-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Password
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> {t('password')}
             </label>
             <div className="relative group">
               <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
@@ -87,7 +93,7 @@ const VendorLogin = () => {
                 type="password" 
                 required
                 className="input-password w-full pl-12 pr-4 py-4 rounded-2xl font-medium"
-                placeholder="Enter your password"
+                placeholder={t('password')}
                 onChange={e => setFormData({...formData, password: e.target.value})}
               />
             </div>
@@ -95,13 +101,13 @@ const VendorLogin = () => {
 
           <button type="submit" disabled={loading} className="btn-crazy mt-2">
             <span className="btn-text">
-              {loading ? '🔒 Authenticating...' : '⚡ Sign In'}
+              {loading ? '🔒 ...' : t('login')}
             </span>
           </button>
         </form>
 
         <p className="text-center mt-10 text-sm text-slate-500 font-medium">
-          Don't have an account? <Link to="/vendor/register" className="text-indigo-600 font-bold hover:underline">Create one free →</Link>
+          {t('dontHaveAccount')} <Link to="/vendor/register" className="text-indigo-600 font-bold hover:underline">{t('register')} →</Link>
         </p>
       </div>
     </div>

@@ -10,23 +10,27 @@ import WholesalerDashboard from './pages/WholesalerDashboard';
 import AdminPanel from './pages/AdminPanel';
 import PaymentPage from './pages/PaymentPage';
 
+import { LanguageProvider } from './context/LanguageContext';
+
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-[#F6FBF7] text-slate-800 font-sans">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/vendor/login" element={<VendorLogin />} />
-          <Route path="/vendor/register" element={<VendorRegister />} />
-          <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-          <Route path="/wholesaler/login" element={<WholesalerLogin />} />
-          <Route path="/wholesaler/register" element={<WholesalerRegister />} />
-          <Route path="/wholesaler/dashboard" element={<WholesalerDashboard />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/pay/:vendorId" element={<PaymentPage />} />
-        </Routes>
-      </div>
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <div className="min-h-screen bg-[#F6FBF7] text-slate-800 font-sans">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/vendor/login" element={<VendorLogin />} />
+            <Route path="/vendor/register" element={<VendorRegister />} />
+            <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+            <Route path="/wholesaler/login" element={<WholesalerLogin />} />
+            <Route path="/wholesaler/register" element={<WholesalerRegister />} />
+            <Route path="/wholesaler/dashboard" element={<WholesalerDashboard />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/pay/:vendorId" element={<PaymentPage />} />
+          </Routes>
+        </div>
+      </Router>
+    </LanguageProvider>
   );
 }
 

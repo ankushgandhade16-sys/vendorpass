@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Users, LogOut, Wallet, Building2, MessageSquare, User, Send, IndianRupee, AlertTriangle, Clock, Percent, ShieldCheck, Check } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const WholesalerDashboard = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [vendors, setVendors] = useState([]);
@@ -89,47 +92,39 @@ const WholesalerDashboard = () => {
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
 
-  const sendMoney = () => {
-    if (!chatAmount || isNaN(chatAmount) || Number(chatAmount) <= 0) return;
-    setUpiError('');
-    setUpiModal({ action: 'send_money', payload: { amount: Number(chatAmount), note: chatText } });
-  };
-
   const handleUpiSubmit = async () => {
     // Accept any 4-digit PIN for hackathon demo
     if (upiPin.length !== 4) return;
-    setUpiError('');
     try {
       const token = localStorage.getItem('token');
-      if (upiModal.action === 'send_money') {
-        const { amount, note } = upiModal.payload;
-        await axios.post(
-          '/api/messages/send-money',
-          { receiverId: chatUserId, amount, note: note || 'Payment' },
-          { headers: { 'x-auth-token': token } }
-        );
-        setChatAmount(''); setChatText(''); setShowPayInput(false);
-        openChat(chatUserId); fetchData();
-        setUpiModal(null); setUpiPin('');
-        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: 'Money sent securely.' });
-      }
-    } catch (err) {
-      setUpiError(err.response?.data?.msg || err.message || 'Transaction failed');
+      const res = await axios.post('/api/transactions/send', { 
+        receiverId: upiModal.payload.vendorId || chatUserId, 
+        amount: upiModal.payload.amount, 
+        note: upiModal.payload.note || 'Manual payment'
+      }, { headers: { 'x-auth-token': token } });
+      
+      setSuccessScreen({
+        title: 'Payment Successful',
+        amount: upiModal.payload.amount,
+        subtitle: `Money sent to ${upiModal.payload.vendorName || 'Vendor'}`
+      });
+      setUpiModal(null);
       setUpiPin('');
+      fetchData();
+      if (chatUserId) openChat(chatUserId);
+    } catch (err) {
+      setUpiError(err.response?.data?.msg || 'Payment failed');
     }
   };
 
-  const handleApprove = async (id) => {
-    const inputs = loanInputs[id] || {};
-    const interestRate = Number(inputs.rate || 5);
-    const durationMinutes = Number(inputs.duration || 5);
-    if (interestRate < 0 || durationMinutes < 1) return alert('Invalid inputs');
+  const approveLoan = async (loanId) => {
+    const inputs = loanInputs[loanId] || {};
+    if (!inputs.interestRate || !inputs.duration) return alert('Enter terms');
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/credit/${id}`, { status: 'Approved', interestRate, durationMinutes }, { headers: { 'x-auth-token': token } });
-      alert(`Loan approved! ${interestRate}% interest, due in ${durationMinutes} minutes.`);
-      fetchRequests(); fetchData();
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+      await axios.post(`/api/credit/approve/${loanId}`, inputs, { headers: { 'x-auth-token': token } });
+      fetchRequests();
+    } catch (err) { console.error(err); }
   };
 
   const handleReject = async (id) => {
@@ -140,13 +135,9 @@ const WholesalerDashboard = () => {
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
 
-  const startChatWithVendor = async (vendor) => {
-    setChatUserId(vendor.user); setActiveTab('messages');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/messages/${vendor.user}`, { headers: { 'x-auth-token': token } });
-      setChatMessages(res.data);
-    } catch (err) { console.error(err); }
+  const startChatWithVendor = (vendor) => {
+    setActiveTab('messages');
+    openChat(vendor._id || vendor.userId);
   };
 
   const updateLoanInput = (id, field, value) => {
@@ -171,13 +162,16 @@ const WholesalerDashboard = () => {
                <Building2 className="w-8 h-8 text-emerald-400" />
              </div>
              <div>
-               <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Premium Distributor</p>
+               <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest">{t('wholesaler')}</p>
                <h1 className="text-3xl font-extrabold tracking-tight">{wholesaler.businessName}</h1>
              </div>
           </div>
-          <button onClick={() => { localStorage.clear(); navigate('/'); }} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all hover:scale-110 active:scale-95 border border-white/10">
-            <LogOut className="w-6 h-6 text-white" />
-          </button>
+          <div className="flex items-center gap-4">
+            <LanguageSelector className="bg-white/10 px-3 py-2 rounded-2xl border border-white/10" />
+            <button onClick={() => { localStorage.clear(); navigate('/'); }} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all hover:scale-110 active:scale-95 border border-white/10">
+              <LogOut className="w-6 h-6 text-white" />
+            </button>
+          </div>
         </div>
         <div className="mt-8 bg-white/5 backdrop-blur-md p-6 rounded-3xl flex items-center justify-between border border-white/10 shadow-inner">
           <div className="flex items-center gap-4">
@@ -269,26 +263,26 @@ const WholesalerDashboard = () => {
                         <p className="text-sm text-amber-800 font-medium mb-3">Set loan terms before approving:</p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-xs text-slate-500 flex items-center gap-1 mb-1"><Percent className="w-3 h-3" /> Interest Rate (%)</label>
-                            <input type="number" min="0" placeholder="5" value={inputs.rate || ''} onChange={e => updateLoanInput(r._id, 'rate', e.target.value)}
+                            <label className="text-xs text-slate-500 flex items-center gap-1 mb-1"><Percent className="w-3 h-3" /> {t('interestRate') || 'Interest Rate'} (%)</label>
+                            <input type="number" min="0" placeholder="5" value={inputs.interestRate || ''} onChange={e => updateLoanInput(r._id, 'interestRate', e.target.value)}
                               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-500 flex items-center gap-1 mb-1"><Clock className="w-3 h-3" /> Duration (minutes)</label>
+                            <label className="text-xs text-slate-500 flex items-center gap-1 mb-1"><Clock className="w-3 h-3" /> {t('duration') || 'Duration'} (minutes)</label>
                             <input type="number" min="1" placeholder="5" value={inputs.duration || ''} onChange={e => updateLoanInput(r._id, 'duration', e.target.value)}
                               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
                           </div>
                         </div>
                         <p className="text-xs text-slate-400 mt-2">
-                          Total vendor will owe: ₹{(r.amount * (1 + (inputs.rate || 5) / 100)).toFixed(2)} • Due in {inputs.duration || 5} min
+                          Total vendor will owe: ₹{(r.amount * (1 + (inputs.interestRate || 5) / 100)).toFixed(2)} • Due in {inputs.duration || 5} min
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => handleApprove(r._id)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition">
-                          ✅ Approve & Send ₹{r.amount}
+                        <button onClick={() => approveLoan(r._id)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition">
+                          ✅ {t('approve') || 'Approve'} & Send ₹{r.amount}
                         </button>
                         <button onClick={() => handleReject(r._id)} className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2.5 rounded-xl font-bold transition">
-                          Reject
+                          {t('reject') || 'Reject'}
                         </button>
                       </div>
                     </div>
@@ -297,13 +291,13 @@ const WholesalerDashboard = () => {
                   {/* Active / Overdue / Defaulted — Show loan details */}
                   {['Active', 'Overdue', 'Defaulted'].includes(r.status) && (
                     <div className="bg-slate-50 rounded-xl p-3 text-sm space-y-1">
-                      <div className="flex justify-between"><span className="text-slate-500">Interest Rate</span><span className={isOverdue ? 'text-red-600 font-bold' : 'font-medium'}>{r.interestRate}%</span></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Total Due</span><span className="font-bold">₹{(r.totalDue || 0).toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Paid So Far</span><span className="text-emerald-600 font-medium">₹{r.amountPaid || 0}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Remaining</span><span className="font-bold text-slate-800">₹{remaining.toFixed(2)}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Due Date</span><span className={isOverdue ? 'text-red-600 font-bold' : ''}>{new Date(r.dueDate).toLocaleTimeString()}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('interestRate') || 'Interest Rate'}</span><span className={isOverdue ? 'text-red-600 font-bold' : 'font-medium'}>{r.interestRate}%</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('totalDue') || 'Total Due'}</span><span className="font-bold">₹{(r.totalDue || 0).toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('paidSoFar') || 'Paid So Far'}</span><span className="text-emerald-600 font-medium">₹{r.amountPaid || 0}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('remaining') || 'Remaining'}</span><span className="font-bold text-slate-800">₹{remaining.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('dueDate') || 'Due Date'}</span><span className={isOverdue ? 'text-red-600 font-bold' : ''}>{new Date(r.dueDate).toLocaleTimeString()}</span></div>
                       {r.dueDate && r.status === 'Active' && (
-                        <div className="flex justify-between"><span className="text-slate-500">⏱️ Time Left</span><span className={`font-bold text-lg ${totalSecsLeft <= 120 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>{timerStr}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">⏱️ {t('timeLeft') || 'Time Left'}</span><span className={`font-bold text-lg ${totalSecsLeft <= 120 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>{timerStr}</span></div>
                       )}
                       {isOverdue && (
                         <div className="flex items-center gap-2 text-red-600 mt-2 bg-red-50 p-2 rounded-lg">

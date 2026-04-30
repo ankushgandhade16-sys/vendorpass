@@ -3,22 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react';
 import { Wallet, Search, CreditCard, MessageSquare, LogOut, ArrowUpRight, ArrowDownRight, User, Send, IndianRupee, AlertTriangle, QrCode, History, Home, Bell, TrendingUp, ShieldCheck, Check } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const VendorDashboard = () => {
+  const { t, language, changeLanguage } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ fullName: '', email: '', businessAddress: '', businessType: '' });
+  const [editForm, setEditForm] = useState({ fullName: '', email: '', businessAddress: '', businessType: '', language: 'en' });
 
   const openEditModal = () => {
     setEditForm({
       fullName: vendor.fullName || '',
       email: vendor.email || '',
       businessAddress: vendor.businessAddress || '',
-      businessType: vendor.businessType || ''
+      businessType: vendor.businessType || '',
+      language: vendor.language || 'en'
     });
     setShowEditModal(true);
   };
@@ -28,6 +32,12 @@ const VendorDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put('/api/vendors/profile', editForm, { headers: { 'x-auth-token': token } });
+      
+      // Update global language state if it changed
+      if (editForm.language !== language) {
+        changeLanguage(editForm.language);
+      }
+      
       alert('Profile updated successfully!');
       setShowEditModal(false);
       window.location.reload();
@@ -317,6 +327,7 @@ const VendorDashboard = () => {
             <h1 className="text-xl font-extrabold text-emerald-600 tracking-tight">VendorPass</h1>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSelector />
             <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition">
               <Bell className="w-5 h-5" />
             </button>
@@ -717,6 +728,19 @@ const VendorDashboard = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Business Address</label>
                   <textarea value={editForm.businessAddress} onChange={e => setEditForm({...editForm, businessAddress: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500" rows="3" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Preferred Language</label>
+                  <select 
+                    value={editForm.language} 
+                    onChange={e => setEditForm({...editForm, language: e.target.value})}
+                    className="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="mr">मराठी (Marathi)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                  </select>
                 </div>
                 <div className="flex gap-3 mt-6">
                   <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>

@@ -29,7 +29,7 @@ const upload = multer({ storage: storage });
 
 router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, { name: 'businessPhoto', maxCount: 1 }, { name: 'photos', maxCount: 5 }]), async (req, res) => {
   try {
-    const { username, password, role, upiPin, ...profileData } = req.body;
+    const { username, password, role, upiPin, language, ...profileData } = req.body;
     
     if (!username || !password || !role) {
       return res.status(400).json({ message: 'Username, password, and role are required' });
@@ -41,7 +41,7 @@ router.post('/register', upload.fields([{ name: 'personalPhoto', maxCount: 1 }, 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    user = new User({ username, password: hashedPassword, role, upiPin });
+    user = new User({ username, password: hashedPassword, role, upiPin, language: language || 'en' });
     await user.save();
 
     const wallet = new Wallet({ user: user._id, balance: 1000 }); // Bonus 1000 for hackathon dummy
@@ -124,6 +124,26 @@ router.get('/me', async (req, res) => {
     const user = await User.findById(decoded.user.id).populate('vendorProfile').populate('wholesalerProfile').populate('wallet');
     if (!user) return res.status(401).json({ msg: 'Token is not valid' });
     res.json(user);
+  } catch (err) {
+    res.status(401).json({ msg: 'Token is not valid' });
+  }
+});
+
+router.post('/update-preference', async (req, res) => {
+  const token = req.header('x-auth-token');
+  if (!token) return res.status(401).json({ msg: 'No token, auth denied' });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { language } = req.body;
+    
+    const user = await User.findById(decoded.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    if (language) user.language = language;
+    await user.save();
+    
+    res.json({ success: true, language: user.language });
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });
   }

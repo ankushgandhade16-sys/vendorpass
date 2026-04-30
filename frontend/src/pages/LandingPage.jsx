@@ -1,8 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Building2, ChevronRight, ShieldCheck, Wallet, ArrowRightLeft } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 const LandingPage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   return (
@@ -12,18 +15,16 @@ const LandingPage = () => {
           <Store className="text-blue-600 w-8 h-8" />
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">VendorPass</h1>
         </div>
+        <LanguageSelector className="bg-white/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/50" />
       </div>
 
       <div className="max-w-4xl w-full grid md:grid-cols-2 gap-12 items-center mt-12">
         <div className="space-y-6 text-center md:text-left">
           <h2 className="text-5xl md:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Digital Identity & <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500">
-              Wallet for All.
-            </span>
+            {t('landingTitle') || 'Digital Identity & Wallet for All.'}
           </h2>
           <p className="text-lg text-slate-600 max-w-md mx-auto md:mx-0 leading-relaxed">
-            Empowering street vendors and wholesalers with verified digital identities, intelligent transaction tracking, and dynamic credit scoring.
+            {t('landingSubtitle') || 'Empowering street vendors and wholesalers with verified digital identities, intelligent transaction tracking, and dynamic credit scoring.'}
           </p>
           
           <div className="grid grid-cols-1 gap-4 pt-4">
@@ -37,8 +38,8 @@ const LandingPage = () => {
                   <Store className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-bold text-slate-900 text-lg">Login as Vendor</h3>
-                  <p className="text-sm text-slate-500">Street vendors & local businesses</p>
+                  <h3 className="font-bold text-slate-900 text-lg">{t('login')} {t('asVendor') || 'as Vendor'}</h3>
+                  <p className="text-sm text-slate-500">{t('vendorDesc') || 'Street vendors & local businesses'}</p>
                 </div>
               </div>
               <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
@@ -54,8 +55,8 @@ const LandingPage = () => {
                   <Building2 className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-bold text-slate-900 text-lg">Login as Wholesaler</h3>
-                  <p className="text-sm text-slate-500">Suppliers & distributors</p>
+                  <h3 className="font-bold text-slate-900 text-lg">{t('login')} {t('asWholesaler') || 'as Wholesaler'}</h3>
+                  <p className="text-sm text-slate-500">{t('wholesalerDesc') || 'Suppliers & distributors'}</p>
                 </div>
               </div>
               <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-emerald-600 transition-colors" />
@@ -69,27 +70,27 @@ const LandingPage = () => {
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
             
-            <h3 className="text-2xl font-bold mb-8 text-slate-900 tracking-tight">Why VendorPass?</h3>
+            <h3 className="text-2xl font-bold mb-8 text-slate-900 tracking-tight">{t('whyVendorPass') || 'Why VendorPass?'}</h3>
             <ul className="space-y-8">
               <li className="flex gap-4 items-start group">
                 <div className="bg-blue-50 p-3 rounded-2xl text-blue-600 mt-1 shadow-sm group-hover:scale-110 transition-transform"><ShieldCheck className="w-6 h-6"/></div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-lg">Verified Identity</h4>
-                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">Instant QR-based digital identity for unbanked vendors, establishing trust in the marketplace.</p>
+                  <h4 className="font-bold text-slate-900 text-lg">{t('verifiedIdentity') || 'Verified Identity'}</h4>
+                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">{t('verifiedIdentityDesc') || 'Instant QR-based digital identity for unbanked vendors, establishing trust in the marketplace.'}</p>
                 </div>
               </li>
               <li className="flex gap-4 items-start group">
                 <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600 mt-1 shadow-sm group-hover:scale-110 transition-transform"><Wallet className="w-6 h-6"/></div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-lg">Virtual Wallet</h4>
-                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">Seamless financial tracking to analyze, manage, and scale your daily business cash flow effortlessly.</p>
+                  <h4 className="font-bold text-slate-900 text-lg">{t('virtualWallet') || 'Virtual Wallet'}</h4>
+                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">{t('virtualWalletDesc') || 'Seamless financial tracking to analyze, manage, and scale your daily business cash flow effortlessly.'}</p>
                 </div>
               </li>
               <li className="flex gap-4 items-start group">
                 <div className="bg-purple-50 p-3 rounded-2xl text-purple-600 mt-1 shadow-sm group-hover:scale-110 transition-transform"><ArrowRightLeft className="w-6 h-6"/></div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-lg">Micro-Credit System</h4>
-                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">Build intelligent trust scores to dynamically access inventory and micro-loans exactly when you need them.</p>
+                  <h4 className="font-bold text-slate-900 text-lg">{t('microCredit') || 'Micro-Credit System'}</h4>
+                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">{t('microCreditDesc') || 'Build intelligent trust scores to dynamically access inventory and micro-loans exactly when you need them.'}</p>
                 </div>
               </li>
             </ul>

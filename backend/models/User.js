@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   blocked: { type: Boolean, default: false },
   blockedReason: { type: String },
   upiPin: { type: String },
+  language: { type: String, default: 'en' },
   createdAt: { type: Date, default: Date.now }
 });
 
