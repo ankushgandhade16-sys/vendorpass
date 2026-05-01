@@ -499,7 +499,7 @@ const VendorDashboard = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800">{t(tx.description.toLowerCase()) || tx.description}</p>
-                          <p className="text-xs text-slate-500">{new Date(tx.date).toLocaleDateString()}</p>
+                          <p className="text-xs text-slate-500">{new Date(tx.date).toLocaleString()}</p>
                         </div>
                       </div>
                       <span className={`font-bold ${tx.type === 'credit' ? 'text-emerald-600' : 'text-red-400'}`}>

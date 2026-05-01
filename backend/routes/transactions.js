@@ -29,7 +29,7 @@ router.post('/simulate', auth, async (req, res) => {
     if (type === 'credit') {
       userWallet.balance += amount;
       await userWallet.save();
-      const tx = new Transaction({ wallet: userWallet._id, amount, type: 'credit', description });
+      const tx = new Transaction({ wallet: userWallet._id, amount, type: 'credit', description: `Top-up by ${user.username}` });
       await tx.save();
       // Trust score +5 for vendor transactions
       if (user.vendorProfile) await updateTrustScore(user.vendorProfile, 5);
@@ -40,7 +40,7 @@ router.post('/simulate', auth, async (req, res) => {
       if (userWallet.balance < amount) return res.status(400).json({ msg: 'Insufficient balance' });
       userWallet.balance -= amount;
       await userWallet.save();
-      const tx = new Transaction({ wallet: userWallet._id, amount, type: 'debit', description });
+      const tx = new Transaction({ wallet: userWallet._id, amount, type: 'debit', description: `Withdrawal by ${user.username}` });
       await tx.save();
 
       if (type === 'transfer' && toUsername) {

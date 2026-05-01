@@ -78,6 +78,8 @@ router.post('/send-money', auth, async (req, res) => {
     const receiverWallet = await Wallet.findOne({ user: receiverId });
     if (!receiverWallet) return res.status(404).json({ msg: 'Receiver wallet not found' });
 
+    const receiverUser = await User.findById(receiverId);
+
     // Transfer
     senderWallet.balance -= amount;
     await senderWallet.save();
@@ -85,8 +87,8 @@ router.post('/send-money', auth, async (req, res) => {
     await receiverWallet.save();
 
     // Transaction records
-    await new Transaction({ wallet: senderWallet._id, amount, type: 'debit', description: note || 'Chat payment sent' }).save();
-    await new Transaction({ wallet: receiverWallet._id, amount, type: 'credit', description: note || 'Chat payment received' }).save();
+    await new Transaction({ wallet: senderWallet._id, amount, type: 'debit', description: `Sent to ${receiverUser.username}: ${note || 'Chat payment'}` }).save();
+    await new Transaction({ wallet: receiverWallet._id, amount, type: 'credit', description: `Received from ${senderUser.username}: ${note || 'Chat payment'}` }).save();
 
     // Message record
     const msg = new Message({ sender: req.user.id, receiver: receiverId, text: note || 'Payment', amount, type: 'payment' });

@@ -58,7 +58,7 @@ router.put('/:id', auth, async (req, res) => {
   const { status, interestRate, durationMinutes } = req.body;
   try {
     if (req.user.role !== 'wholesaler') return res.status(403).json({ msg: 'Not authorized' });
-    const request = await CreditRequest.findById(req.params.id);
+    const request = await CreditRequest.findById(req.params.id).populate('vendorUser wholesalerUser');
     if (!request) return res.status(404).json({ msg: 'Not found' });
     
     if (status === 'Approved') {
@@ -73,6 +73,9 @@ router.put('/:id', auth, async (req, res) => {
       request.status = 'Active';
       request.approvedDate = Date.now();
 
+      const vendorName = request.vendorUser ? request.vendorUser.username : 'Vendor';
+      const wholesalerName = request.wholesalerUser ? request.wholesalerUser.username : 'Wholesaler';
+
       // Disburse loan — deduct from wholesaler, credit to vendor
       const wholesalerWallet = await Wallet.findOne({ user: request.wholesalerUser });
       if (wholesalerWallet) {
@@ -81,14 +84,14 @@ router.put('/:id', auth, async (req, res) => {
         }
         wholesalerWallet.balance -= request.amount;
         await wholesalerWallet.save();
-        await new Transaction({ wallet: wholesalerWallet._id, amount: request.amount, type: 'debit', description: `Loan disbursed to vendor` }).save();
+        await new Transaction({ wallet: wholesalerWallet._id, amount: request.amount, type: 'debit', description: `Loan disbursed to ${vendorName}` }).save();
       }
 
       const vendorWallet = await Wallet.findOne({ user: request.vendorUser });
       if (vendorWallet) {
         vendorWallet.balance += request.amount;
         await vendorWallet.save();
-        await new Transaction({ wallet: vendorWallet._id, amount: request.amount, type: 'credit', description: `Loan received from wholesaler` }).save();
+        await new Transaction({ wallet: vendorWallet._id, amount: request.amount, type: 'credit', description: `Loan received from ${wholesalerName}` }).save();
       }
     } else {
       request.status = status;
@@ -107,11 +110,14 @@ router.put('/:id', auth, async (req, res) => {
 router.post('/:id/repay', auth, async (req, res) => {
   const { amount } = req.body;
   try {
-    const request = await CreditRequest.findById(req.params.id);
+    const request = await CreditRequest.findById(req.params.id).populate('vendorUser wholesalerUser');
     if (!request) return res.status(404).json({ msg: 'Loan not found' });
     if (!['Active', 'Overdue', 'Defaulted'].includes(request.status)) {
       return res.status(400).json({ msg: 'This loan is not active' });
     }
+
+    const vendorName = request.vendorUser ? request.vendorUser.username : 'Vendor';
+    const wholesalerName = request.wholesalerUser ? request.wholesalerUser.username : 'Wholesaler';
 
     const vendorWallet = await Wallet.findOne({ user: req.user.id });
     if (!vendorWallet || vendorWallet.balance < amount) {
@@ -121,7 +127,7 @@ router.post('/:id/repay', auth, async (req, res) => {
     // Deduct from vendor
     vendorWallet.balance -= amount;
     await vendorWallet.save();
-    await new Transaction({ wallet: vendorWallet._id, amount, type: 'debit', description: 'Loan repayment' }).save();
+    await new Transaction({ wallet: vendorWallet._id, amount, type: 'debit', description: `Loan repayment to ${wholesalerName}` }).save();
 
     // Credit to wholesaler
     if (request.wholesalerUser) {
@@ -129,7 +135,7 @@ router.post('/:id/repay', auth, async (req, res) => {
       if (wholesalerWallet) {
         wholesalerWallet.balance += amount;
         await wholesalerWallet.save();
-        await new Transaction({ wallet: wholesalerWallet._id, amount, type: 'credit', description: 'Loan repayment received' }).save();
+        await new Transaction({ wallet: wholesalerWallet._id, amount, type: 'credit', description: `Loan repayment from ${vendorName}` }).save();
       }
     }
 
