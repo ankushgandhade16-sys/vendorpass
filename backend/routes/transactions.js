@@ -10,9 +10,11 @@ const { updateTrustScore } = require('../utils/trustScore');
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user || !user.wallet) return res.json([]);
     const transactions = await Transaction.find({ wallet: user.wallet }).sort({ date: -1 });
     res.json(transactions);
   } catch (err) {
+    console.error(err);
     res.status(500).send('Server Error');
   }
 });

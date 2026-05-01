@@ -24,4 +24,28 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Update wholesaler profile
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const user = await require('../models/User').findById(req.user.id).populate('wholesalerProfile');
+    if (!user || req.user.role !== 'wholesaler') return res.status(403).json({ msg: 'Not authorized' });
+
+    const { fullName, businessName, email, address, gst, productCategories } = req.body;
+    const wholesaler = user.wholesalerProfile;
+    
+    if (fullName) wholesaler.fullName = fullName;
+    if (businessName) wholesaler.businessName = businessName;
+    if (email) wholesaler.email = email;
+    if (address) wholesaler.address = address;
+    if (gst) wholesaler.gst = gst;
+    if (productCategories) wholesaler.productCategories = typeof productCategories === 'string' ? productCategories.split(',').map(s => s.trim()) : productCategories;
+
+    await wholesaler.save();
+    res.json(wholesaler);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

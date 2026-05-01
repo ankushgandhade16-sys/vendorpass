@@ -366,11 +366,11 @@ const VendorDashboard = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-slate-400 text-xs font-medium">Welcome back 👋</p>
+                    <p className="text-slate-400 text-xs font-medium">{t('welcomeBack') || 'Welcome back 👋'}</p>
                     <p className="font-extrabold text-slate-900 text-lg leading-tight">{vendor.fullName}</p>
-                    <p className="text-[11px] text-emerald-600 font-bold mt-0.5">ID: {vendor.vendorId}</p>
+                    <p className="text-[11px] text-emerald-600 font-bold mt-0.5">{t('id')}: {vendor.vendorId}</p>
                   </div>
-                  <button onClick={openEditModal} className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap shadow-md shadow-emerald-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">Edit Profile</button>
+                  <button onClick={openEditModal} className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap shadow-md shadow-emerald-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">{t('editProfile')}</button>
                 </div>
               </div>
 
@@ -379,7 +379,7 @@ const VendorDashboard = () => {
                 <div>
                   <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-full">
                     <div className="flex justify-between items-center mb-6">
-                      <h3 className="font-bold text-slate-800 text-lg">Your Track</h3>
+                      <h3 className="font-bold text-slate-800 text-lg">{t('yourTrack')}</h3>
                       <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     {/* Simple CSS Bar Chart */}
@@ -414,7 +414,7 @@ const VendorDashboard = () => {
                 <div>
                   <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-full">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-slate-800 text-lg">Trust Score</h3>
+                      <h3 className="font-bold text-slate-800 text-lg">{t('trustScore')}</h3>
                       <ShieldCheck className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="flex flex-col items-center justify-center relative py-4">
@@ -427,14 +427,14 @@ const VendorDashboard = () => {
                         <div className="flex items-baseline gap-1">
                           <span className={`text-3xl font-extrabold ${vendor.trustTier === 'Platinum' ? 'text-slate-800' : vendor.trustTier === 'Gold' ? 'text-yellow-500' : vendor.trustTier === 'Silver' ? 'text-slate-400' : 'text-orange-500'}`}>{vendor.trustScore || 0}%</span>
                         </div>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 uppercase ${vendor.trustTier === 'Platinum' ? 'bg-slate-800 text-white' : vendor.trustTier === 'Gold' ? 'bg-yellow-100 text-yellow-800' : vendor.trustTier === 'Silver' ? 'bg-slate-200 text-slate-800' : 'bg-orange-100 text-orange-800'}`}>{vendor.trustTier} Level</span>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 uppercase ${vendor.trustTier === 'Platinum' ? 'bg-slate-800 text-white' : vendor.trustTier === 'Gold' ? 'bg-yellow-100 text-yellow-800' : vendor.trustTier === 'Silver' ? 'bg-slate-200 text-slate-800' : 'bg-orange-100 text-orange-800'}`}>{t(vendor.trustTier.toLowerCase())} {t('level')}</span>
                       </div>
                     </div>
                     <div className="flex justify-between text-[9px] font-medium text-slate-500 mt-2 px-2">
-                      <span className={vendor.trustTier === 'Bronze' ? 'text-orange-600 font-bold' : ''}>Bronze</span>
-                      <span className={vendor.trustTier === 'Silver' ? 'text-slate-600 font-bold' : ''}>Silver</span>
-                      <span className={vendor.trustTier === 'Gold' ? 'text-yellow-600 font-bold' : ''}>Gold</span>
-                      <span className={vendor.trustTier === 'Platinum' ? 'text-slate-800 font-bold' : ''}>Platinum</span>
+                      <span className={vendor.trustTier === 'Bronze' ? 'text-orange-600 font-bold' : ''}>{t('bronze')}</span>
+                      <span className={vendor.trustTier === 'Silver' ? 'text-slate-600 font-bold' : ''}>{t('silver')}</span>
+                      <span className={vendor.trustTier === 'Gold' ? 'text-yellow-600 font-bold' : ''}>{t('gold')}</span>
+                      <span className={vendor.trustTier === 'Platinum' ? 'text-slate-800 font-bold' : ''}>{t('platinum')}</span>
                     </div>
                   </div>
                 </div>
@@ -449,33 +449,33 @@ const VendorDashboard = () => {
               
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl shadow-2xl shadow-blue-900/50 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet className="w-24 h-24 text-white" /></div>
-                <p className="text-blue-200 font-medium mb-2">Available Balance</p>
+                <p className="text-blue-200 font-medium mb-2">{t('availableBalance')}</p>
                 <h3 className="text-4xl font-bold text-white mb-6">₹{wallet?.balance || 0}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <button onClick={() => handleSimulate('credit')} className="bg-white/20 hover:bg-white/30 p-3 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-sm transition">
                     <ArrowDownRight className="w-5 h-5 text-emerald-300" />
-                    <span className="font-semibold text-white">Add Money</span>
+                    <span className="font-semibold text-white">{t('addMoney')}</span>
                   </button>
                   <button onClick={() => handleSimulate('debit')} className="bg-white/20 hover:bg-white/30 p-3 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-sm transition">
                     <ArrowUpRight className="w-5 h-5 text-red-300" />
-                    <span className="font-semibold text-white">Send</span>
+                    <span className="font-semibold text-white">{t('send')}</span>
                   </button>
                 </div>
               </div>
 
               {/* QR */}
               <div className="bg-white border border-slate-200 p-6 rounded-3xl text-center shadow-lg">
-                <p className="text-sm text-slate-500 mb-4 font-medium uppercase tracking-wider">My Receiving QR</p>
+                <p className="text-sm text-slate-500 mb-4 font-medium uppercase tracking-wider">{t('receivingQR')}</p>
                 <div className="bg-white p-6 rounded-2xl inline-block shadow-xl">
                   <QRCodeSVG value={`${window.location.origin}/pay/${vendor.vendorId}`} size={200} />
                 </div>
-                <p className="mt-6 text-slate-600 text-sm">Show this QR to receive payments securely.</p>
+                <p className="mt-6 text-slate-600 text-sm">{t('showQRToReceive')}</p>
               </div>
 
               </div>
               {/* Transactions */}
               <div>
-                <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">Transaction History</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">{t('transactionHistory')}</h3>
                 <div className="space-y-3">
                   {transactions.map(tx => (
                     <div key={tx._id} className="bg-white border border-slate-200 p-4 rounded-2xl flex justify-between items-center">
@@ -484,7 +484,7 @@ const VendorDashboard = () => {
                           {tx.type === 'credit' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800">{tx.description || 'Transaction'}</p>
+                          <p className="font-semibold text-slate-800">{t(tx.description.toLowerCase()) || tx.description}</p>
                           <p className="text-xs text-slate-500">{new Date(tx.date).toLocaleDateString()}</p>
                         </div>
                       </div>
@@ -493,7 +493,7 @@ const VendorDashboard = () => {
                       </span>
                     </div>
                   ))}
-                  {transactions.length === 0 && <p className="text-center text-slate-500 py-4">No transactions yet</p>}
+                  {transactions.length === 0 && <p className="text-center text-slate-500 py-4">{t('noTransactions')}</p>}
                 </div>
               </div>
             </div>
@@ -501,28 +501,37 @@ const VendorDashboard = () => {
 
           {activeTab === 'wholesalers' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold mb-4">Find Wholesalers</h2>
-              <input type="text" placeholder="Search by name or category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 mb-6 shadow-sm" />
+              <h2 className="text-2xl font-bold mb-4">{t('findWholesalers')}</h2>
+              <input type="text" placeholder={t('searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 mb-6 shadow-sm" />
               <div className="grid gap-4">
                 {wholesalers.filter(ws => ws.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || (ws.productCategories && ws.productCategories.join(' ').toLowerCase().includes(searchQuery.toLowerCase()))).map(ws => {
                   const hasPending = loans.some(l => (l.wholesaler?._id === ws._id || l.wholesaler === ws._id) && l.status === 'Pending');
                   return (
-                    <div key={ws._id} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl">
-                      <h3 className="font-bold text-lg">{ws.businessName}</h3>
-                      <p className="text-sm text-emerald-600 mb-1">👤 {ws.fullName}</p>
-                      <p className="text-sm text-slate-500 mb-3">{ws.productCategories?.join(', ')}</p>
-                      <div className="flex gap-2">
+                    <div key={ws._id} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex gap-4">
+                      <div className="w-16 h-16 rounded-xl bg-white overflow-hidden flex-shrink-0 border border-slate-200 shadow-sm flex items-center justify-center">
+                        {ws.photos && ws.photos[0] ? (
+                          <img src={getPhotoUrl(ws.photos[0])} className="w-full h-full object-cover" alt="Wholesaler" />
+                        ) : (
+                          <User className="w-8 h-8 text-slate-300" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{ws.businessName}</h3>
+                        <p className="text-sm text-emerald-600 mb-1">👤 {ws.fullName}</p>
+                        <p className="text-sm text-slate-500 mb-3">{ws.productCategories?.join(', ')}</p>
+                      </div>
+                      <div className="flex gap-2 flex-col justify-center">
                         {hasPending ? (
                           <button disabled className="flex-1 bg-amber-100 border border-amber-300 text-amber-700 py-2 rounded-xl font-medium cursor-not-allowed">
-                            Request Pending
+                            {t('requestPending')}
                           </button>
                         ) : (
                           <button onClick={() => handleRequestCredit(ws._id)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium transition">
-                            Request Loan
+                            {t('requestLoan')}
                           </button>
                         )}
                         <button onClick={() => startChatWith(ws)} className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 py-2 rounded-xl font-medium transition flex items-center justify-center gap-2">
-                          <MessageSquare className="w-4 h-4" /> Chat
+                          <MessageSquare className="w-4 h-4" /> {t('chat')}
                         </button>
                       </div>
                     </div>
@@ -534,8 +543,8 @@ const VendorDashboard = () => {
 
           {activeTab === 'credit' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold mb-2">My Loans</h2>
-              <p className="text-sm text-slate-500 mb-4">Manage your loans and repayments</p>
+              <h2 className="text-2xl font-bold mb-2">{t('myLoans')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('manageLoans')}</p>
               {loans.map(loan => {
                 const remaining = (loan.totalDue || loan.amount) - (loan.amountPaid || 0);
                 const isOverdue = ['Overdue', 'Defaulted'].includes(loan.status);
@@ -556,10 +565,10 @@ const VendorDashboard = () => {
                           )}
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Loan Amount</p>
+                          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">{t('loanAmount')}</p>
                           <p className="text-3xl font-black text-slate-800 leading-none mb-1">₹{loan.amount}</p>
                           <p className="text-sm text-slate-700 font-semibold">
-                            {loan.wholesaler?.fullName || loan.wholesaler?.businessName || 'Wholesaler'}
+                            {loan.wholesaler?.fullName || loan.wholesaler?.businessName || t('wholesaler')}
                           </p>
                           <p className="text-[10px] text-slate-400 font-medium">ID: {loan.wholesaler?._id || loan.wholesaler}</p>
                         </div>
@@ -575,53 +584,53 @@ const VendorDashboard = () => {
 
                     {loan.status === 'Pending' && (
                       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-sm text-amber-300">
-                        ⏳ Waiting for wholesaler to set terms and approve...
+                        ⏳ {t('waitingApproval')}
                       </div>
                     )}
 
                     {['Active', 'Overdue', 'Defaulted'].includes(loan.status) && (
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">Interest Rate</span>
+                          <span className="text-slate-500">{t('interest')}</span>
                           <span className={isOverdue ? 'text-red-400 font-bold' : ''}>{loan.interestRate}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">Total Due (with interest)</span>
+                          <span className="text-slate-500">{t('totalDue')}</span>
                           <span className="font-bold text-slate-800">₹{(loan.totalDue || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">Already Paid</span>
+                          <span className="text-slate-500">{t('alreadyPaid')}</span>
                           <span className="text-emerald-600">₹{loan.amountPaid || 0}</span>
                         </div>
                         <div className="flex justify-between text-sm bg-white p-2 rounded-lg">
-                          <span className="text-slate-600 font-medium">💰 Still Owe</span>
+                          <span className="text-slate-600 font-medium">💰 {t('stillOwe')}</span>
                           <span className="font-bold text-lg text-slate-800">₹{remaining.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">Due At</span>
+                          <span className="text-slate-500">{t('dueAt')}</span>
                           <span className={isOverdue ? 'text-red-400 font-bold' : ''}>{new Date(loan.dueDate).toLocaleTimeString()}</span>
                         </div>
                         {loan.dueDate && loan.status === 'Active' && (
                           <div className={`flex justify-between text-sm p-2 rounded-lg ${totalSecsLeft <= 120 ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
-                            <span className="text-slate-600">⏱️ Time Left</span>
+                            <span className="text-slate-600">⏱️ {t('timeLeftLabel')}</span>
                             <span className={`font-bold text-xl ${totalSecsLeft <= 120 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>{timerStr}</span>
                           </div>
                         )}
                         {isOverdue && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-2 text-sm text-red-300">
                             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                            <span>Interest increases +2% every 2 min overdue. Account blocks after 10 min!</span>
+                            <span>{t('overdueWarning')}</span>
                           </div>
                         )}
                         <button onClick={() => handleRepayLoan(loan._id, remaining.toFixed(2))} className="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-2 text-lg text-white">
-                          💳 Repay ₹{remaining.toFixed(2)} Now
+                          💳 {t('repayNow')} ₹{remaining.toFixed(2)}
                         </button>
                       </div>
                     )}
 
                     {loan.status === 'Paid' && (
                       <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-sm text-emerald-600 font-medium">
-                        ✅ Fully repaid — ₹{loan.amountPaid} paid
+                        ✅ {t('fullyRepaid')} — ₹{loan.amountPaid} {t('paid')}
                       </div>
                     )}
                   </div>
@@ -629,8 +638,8 @@ const VendorDashboard = () => {
               })}
               {loans.length === 0 && (
                 <div className="text-center p-8 bg-white border border-slate-200 rounded-3xl">
-                  <p className="text-slate-500">No loan requests yet.</p>
-                  <p className="text-sm text-slate-500 mt-1">Go to Search tab to find wholesalers and request a loan!</p>
+                  <p className="text-slate-500">{t('noLoanRequests')}</p>
+                  <p className="text-sm text-slate-500 mt-1">{t('goToSearch')}</p>
                 </div>
               )}
             </div>
@@ -638,12 +647,16 @@ const VendorDashboard = () => {
 
           {activeTab === 'messages' && !chatUserId && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold mb-2">Messages</h2>
-              <p className="text-sm text-slate-500 mb-4">Chat with wholesalers and send payments</p>
+              <h2 className="text-2xl font-bold mb-2">{t('messages')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('chatWithWholesalers')}</p>
               {conversations.map(c => (
                 <button key={c.userId} onClick={() => openChat(c.userId)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-50 border border-slate-200 transition text-left">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <User className="w-6 h-6 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                    {c.photo ? (
+                      <img src={getPhotoUrl(c.photo)} className="w-full h-full object-cover" alt="User" />
+                    ) : (
+                      <User className="w-6 h-6 text-slate-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-slate-800 truncate">{c.name}</p>
@@ -663,7 +676,7 @@ const VendorDashboard = () => {
 
           {activeTab === 'messages' && chatUserId && (
             <div className="flex flex-col h-[calc(100vh-200px)]">
-              <button onClick={() => { setChatUserId(null); fetchConversations(); }} className="text-sm text-blue-400 mb-4 self-start hover:underline">← Back to conversations</button>
+              <button onClick={() => { setChatUserId(null); fetchConversations(); }} className="text-sm text-blue-400 mb-4 self-start hover:underline">← {t('backToConversations')}</button>
               <div className="flex-1 overflow-y-auto space-y-3 mb-4">
                 {chatMessages.map(msg => (
                   <div key={msg._id} className={`flex ${msg.sender === user._id ? 'justify-end' : 'justify-start'}`}>
@@ -730,7 +743,7 @@ const VendorDashboard = () => {
                   <textarea value={editForm.businessAddress} onChange={e => setEditForm({...editForm, businessAddress: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500" rows="3" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Preferred Language</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">{t('preferredLanguage')}</label>
                   <select 
                     value={editForm.language} 
                     onChange={e => setEditForm({...editForm, language: e.target.value})}
@@ -743,8 +756,8 @@ const VendorDashboard = () => {
                   </select>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
-                  <button type="submit" className="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition">Save Changes</button>
+                  <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">{t('cancel')}</button>
+                  <button type="submit" className="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition">{t('saveChanges')}</button>
                 </div>
               </form>
             </div>
@@ -761,8 +774,8 @@ const VendorDashboard = () => {
                 <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 bg-blue-50 text-blue-600">
                   <CreditCard className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-extrabold text-slate-900">Request Loan</h3>
-                <p className="text-slate-400 text-sm mt-1">Enter the amount you need</p>
+                <h3 className="text-2xl font-extrabold text-slate-900">{t('requestLoan')}</h3>
+                <p className="text-slate-400 text-sm mt-1">{t('enterAmountNeeded')}</p>
               </div>
               <div className="relative mb-6">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-3xl font-black text-slate-300">₹</span>
@@ -778,9 +791,9 @@ const VendorDashboard = () => {
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setRequestLoanWholesalerId(null)} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button onClick={() => setRequestLoanWholesalerId(null)} className="py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">{t('cancel')}</button>
                 <button onClick={submitRequestCredit} className="py-4 rounded-2xl text-white font-bold transition hover:-translate-y-0.5 shadow-lg bg-blue-600 hover:bg-blue-700 shadow-blue-200">
-                  Request
+                  {t('request')}
                 </button>
               </div>
             </div>
@@ -823,28 +836,27 @@ const VendorDashboard = () => {
           </div>
         )}
 
-        {/* Bottom Nav */}
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-50">
           <div className="flex justify-around p-4">
             <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-blue-400' : 'text-slate-500'}`}>
               <Home className="w-6 h-6" />
-              <span className="text-[10px] font-semibold">Home</span>
+              <span className="text-[10px] font-semibold">{t('home')}</span>
             </button>
             <button onClick={() => setActiveTab('qr_history')} className={`flex flex-col items-center gap-1 ${activeTab === 'qr_history' ? 'text-blue-400' : 'text-slate-500'}`}>
               <Wallet className="w-6 h-6" />
-              <span className="text-[10px] font-semibold">Wallet</span>
+              <span className="text-[10px] font-semibold">{t('wallet')}</span>
             </button>
             <button onClick={() => setActiveTab('wholesalers')} className={`flex flex-col items-center gap-1 ${activeTab === 'wholesalers' ? 'text-blue-400' : 'text-slate-500'}`}>
               <Search className="w-6 h-6" />
-              <span className="text-[10px] font-semibold">Search</span>
+              <span className="text-[10px] font-semibold">{t('search')}</span>
             </button>
             <button onClick={() => { setActiveTab('credit'); setChatUserId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'credit' ? 'text-blue-400' : 'text-slate-500'}`}>
               <CreditCard className="w-6 h-6" />
-              <span className="text-[10px] font-semibold">Loans</span>
+              <span className="text-[10px] font-semibold">{t('loans')}</span>
             </button>
             <button onClick={() => { setActiveTab('messages'); setChatUserId(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'messages' ? 'text-blue-400' : 'text-slate-500'}`}>
               <MessageSquare className="w-6 h-6" />
-              <span className="text-[10px] font-semibold">Chat</span>
+              <span className="text-[10px] font-semibold">{t('chat')}</span>
             </button>
           </div>
         </div>
@@ -857,8 +869,8 @@ const VendorDashboard = () => {
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-slate-50 border-2 border-slate-100 shadow-inner">
                   <ShieldCheck className="w-8 h-8 text-slate-800" />
                 </div>
-                <h3 className="text-2xl font-extrabold text-slate-900">Enter UPI PIN</h3>
-                <p className="text-slate-500 text-sm mt-1 font-medium">To securely process ₹{upiModal.payload.amount}</p>
+                <h3 className="text-2xl font-extrabold text-slate-900">{t('enterPin')}</h3>
+                <p className="text-slate-500 text-sm mt-1 font-medium">{t('secureProcess')} ₹{upiModal.payload.amount}</p>
                 {upiError && <p className="text-red-500 text-sm font-bold mt-2 animate-shake">{upiError}</p>}
               </div>
               <div className="mb-8">

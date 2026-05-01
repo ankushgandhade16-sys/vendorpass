@@ -22,10 +22,10 @@ const WholesalerLogin = () => {
       if (res.data.role === 'wholesaler') {
         navigate('/wholesaler/dashboard');
       } else {
-        setError('Invalid role. Use Vendor login.');
+        setError(t('invalidRoleWholesaler'));
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || t('loginFailed'));
     } finally {
       setLoading(false);
     }

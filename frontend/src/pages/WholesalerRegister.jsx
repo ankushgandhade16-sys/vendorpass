@@ -107,7 +107,7 @@ const WholesalerRegister = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('upiPin')}</label>
                   <div className="relative">
                     <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-400" />
-                    <input type="password" maxLength="4" pattern="\d{4}" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:bg-white focus:border-teal-500 outline-none transition-all font-medium" placeholder="4-digit PIN" onChange={e => setFormData({...formData, upiPin: e.target.value})} />
+                    <input type="password" maxLength="4" pattern="\d{4}" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:bg-white focus:border-teal-500 outline-none transition-all font-medium" placeholder={t('upiPinPlaceholder') || '4-digit PIN'} onChange={e => setFormData({...formData, upiPin: e.target.value})} />
                   </div>
                 </div>
               </div>
@@ -116,7 +116,7 @@ const WholesalerRegister = () => {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm">2</span>
-                {t('businessProfile') || 'Business Profile'}
+                {t('businessProfile')}
               </h3>
 
               <div className="space-y-4">
@@ -137,10 +137,10 @@ const WholesalerRegister = () => {
                 </div>
 
                 <div className="relative group">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('productCategories') || 'Product Categories'}</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('productCategories')}</label>
                   <div className="relative">
                     <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" required placeholder="e.g. Grains, Electronics, FMCG" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" onChange={e => setFormData({...formData, productCategories: e.target.value})} />
+                    <input type="text" required placeholder={t('productCategoriesPlaceholder') || 'e.g. Grains, Electronics, FMCG'} className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" onChange={e => setFormData({...formData, productCategories: e.target.value})} />
                   </div>
                 </div>
 
@@ -148,7 +148,7 @@ const WholesalerRegister = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('gst') || 'GST Number'}</label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" placeholder="Your GSTIN number" onChange={e => setFormData({...formData, gst: e.target.value})} />
+                    <input type="text" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" placeholder={t('gstPlaceholder') || '15-digit GSTIN'} onChange={e => setFormData({...formData, gst: e.target.value})} />
                   </div>
                 </div>
               </div>

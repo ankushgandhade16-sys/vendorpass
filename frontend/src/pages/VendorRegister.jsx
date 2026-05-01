@@ -110,7 +110,7 @@ const VendorRegister = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('upiPin')}</label>
                   <div className="relative">
                     <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                    <input type="password" maxLength="4" pattern="\d{4}" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" placeholder="4-digit PIN" onChange={e => setFormData({...formData, upiPin: e.target.value})} />
+                    <input type="password" maxLength="4" pattern="\d{4}" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium" placeholder={t('upiPinPlaceholder') || '4-digit PIN'} onChange={e => setFormData({...formData, upiPin: e.target.value})} />
                   </div>
                 </div>
 
@@ -118,7 +118,7 @@ const VendorRegister = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="email" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium" placeholder="you@example.com" onChange={e => setFormData({...formData, email: e.target.value})} />
+                    <input type="email" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium" placeholder={t('emailPlaceholder') || 'you@example.com'} onChange={e => setFormData({...formData, email: e.target.value})} />
                   </div>
                 </div>
               </div>
@@ -151,7 +151,7 @@ const VendorRegister = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{t('businessType')}</label>
                   <div className="relative">
                     <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" required placeholder="e.g. Vegetables, Clothing" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium" onChange={e => setFormData({...formData, businessType: e.target.value})} />
+                    <input type="text" required placeholder={t('businessTypePlaceholder') || 'e.g. Vegetables, Clothing'} className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium" onChange={e => setFormData({...formData, businessType: e.target.value})} />
                   </div>
                 </div>
 
@@ -169,7 +169,7 @@ const VendorRegister = () => {
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
               <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm">3</span>
-              {t('documentUploads') || 'Document Uploads'}
+              {t('documentUploads')}
             </h3>
             
             <div className="grid md:grid-cols-2 gap-6">
@@ -179,8 +179,8 @@ const VendorRegister = () => {
                   <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600 group-hover:scale-110 transition-transform">
                     <User className="w-8 h-8" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">{files.personalPhoto ? files.personalPhoto.name : (t('personalPhoto') || 'Personal Photo')}</p>
-                  <p className="text-xs text-slate-500 mt-2">Upload a clear photo of your face</p>
+                  <p className="text-sm font-bold text-slate-700">{files.personalPhoto ? files.personalPhoto.name : t('personalPhoto')}</p>
+                  <p className="text-xs text-slate-500 mt-2">{t('uploadClearPhoto')}</p>
                 </div>
               </div>
               
@@ -190,8 +190,8 @@ const VendorRegister = () => {
                   <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-600 group-hover:scale-110 transition-transform">
                     <Store className="w-8 h-8" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">{files.businessPhoto ? files.businessPhoto.name : (t('businessPhoto') || 'Business Photo')}</p>
-                  <p className="text-xs text-slate-500 mt-2">Upload a photo of your shop/business</p>
+                  <p className="text-sm font-bold text-slate-700">{files.businessPhoto ? files.businessPhoto.name : t('businessPhoto')}</p>
+                  <p className="text-xs text-slate-500 mt-2">{t('uploadShopPhoto')}</p>
                 </div>
               </div>
             </div>
@@ -203,7 +203,7 @@ const VendorRegister = () => {
               {!loading && <ShieldCheck className="w-6 h-6" />}
             </button>
             <p className="text-center text-slate-400 text-xs mt-6 font-medium">
-              By clicking, you agree to our Terms of Service and Privacy Policy.
+              {t('agreeTerms')}
             </p>
           </div>
         </form>

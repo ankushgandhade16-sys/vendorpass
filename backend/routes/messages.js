@@ -22,7 +22,8 @@ router.get('/conversations', auth, async (req, res) => {
         seen.add(otherId);
         const otherUser = await User.findById(otherId).populate('vendorProfile').populate('wholesalerProfile');
         const name = otherUser.vendorProfile?.fullName || otherUser.wholesalerProfile?.fullName || otherUser.username;
-        convos.push({ userId: otherId, name, role: otherUser.role, lastMessage: msg.text || `₹${msg.amount} sent`, lastDate: msg.createdAt });
+        const photo = otherUser.vendorProfile?.personalPhoto || (otherUser.wholesalerProfile?.photos && otherUser.wholesalerProfile.photos[0]) || '';
+        convos.push({ userId: otherId, name, role: otherUser.role, photo, lastMessage: msg.text || `₹${msg.amount} sent`, lastDate: msg.createdAt });
       }
     }
     res.json(convos);
