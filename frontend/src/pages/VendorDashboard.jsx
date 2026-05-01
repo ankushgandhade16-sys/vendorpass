@@ -168,15 +168,8 @@ const VendorDashboard = () => {
 
   const sendMoney = async () => {
     if (!chatAmount || isNaN(chatAmount)) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/messages/send-money', { receiverId: chatUserId, amount: Number(chatAmount), note: chatText || 'Payment' }, { headers: { 'x-auth-token': token } });
-      setChatAmount('');
-      setChatText('');
-      setShowPayInput(false);
-      openChat(chatUserId);
-      fetchData();
-    } catch (err) { showToast(err.response?.data?.msg || 'Error'); }
+    setUpiError('');
+    setUpiModal({ action: 'chat_pay', payload: { receiverId: chatUserId, amount: Number(chatAmount), note: chatText || 'Payment' } });
   };
 
   const handleSimulate = async (type) => {
@@ -217,6 +210,15 @@ const VendorDashboard = () => {
 
   const submitRequestCredit = async () => {
     if (!requestLoanAmount || isNaN(requestLoanAmount) || Number(requestLoanAmount) <= 0) return;
+    
+    // Enforce tier-based credit limits
+    const creditLimits = { Bronze: 500, Silver: 2000, Gold: 5000, Platinum: 10000 };
+    const maxLimit = creditLimits[vendor.trustTier] || 500;
+    if (Number(requestLoanAmount) > maxLimit) {
+      showToast(`Your ${vendor.trustTier} tier limit is ₹${maxLimit}. Upgrade your trust score to borrow more.`);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       await axios.post('/api/credit/request', 
@@ -273,6 +275,21 @@ const VendorDashboard = () => {
         fetchConversations();
         fetchData();
         setSuccessScreen({ title: 'Payment Sent', amount, subtitle: 'Money sent securely.' });
+      } else if (upiModal.action === 'chat_pay') {
+        const { receiverId, amount, note } = upiModal.payload;
+        await axios.post(
+          '/api/messages/send-money',
+          { receiverId, amount, note },
+          { headers: { 'x-auth-token': token } }
+        );
+        setUpiModal(null);
+        setUpiPin('');
+        setChatAmount('');
+        setChatText('');
+        setShowPayInput(false);
+        openChat(receiverId);
+        fetchData();
+        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: `₹${amount} sent via chat.` });
       }
     } catch (err) {
       setUpiError(err.response?.data?.msg || err.message || 'Transaction failed');
@@ -387,35 +404,29 @@ const VendorDashboard = () => {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 mt-6 px-4">
-                {/* Sales Overview Chart */}
+                {/* Credit Limit Card */}
                 <div>
                   <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-full">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="font-bold text-slate-800 text-lg">{t('yourTrack')}</h3>
-                      <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-slate-800 text-lg">Credit Limit</h3>
+                      <CreditCard className="w-5 h-5 text-blue-500" />
                     </div>
-                    {/* Simple CSS Bar Chart */}
-                    <div className="flex items-end justify-between h-36 gap-2">
+                    <div className="text-center py-4">
+                      <p className="text-4xl font-black text-slate-800">
+                        ₹{vendor.trustTier === 'Platinum' ? '10,000' : vendor.trustTier === 'Gold' ? '5,000' : vendor.trustTier === 'Silver' ? '2,000' : '500'}
+                      </p>
+                      <p className="text-sm text-slate-500 mt-2">Maximum loan amount for <span className={`font-bold ${vendor.trustTier === 'Platinum' ? 'text-slate-800' : vendor.trustTier === 'Gold' ? 'text-yellow-600' : vendor.trustTier === 'Silver' ? 'text-slate-500' : 'text-orange-600'}`}>{vendor.trustTier}</span> tier</p>
+                    </div>
+                    <div className="space-y-3 mt-4">
                       {[
-                        { day: 'MON', value: 30 },
-                        { day: 'TUE', value: 45 },
-                        { day: 'WED', value: 40 },
-                        { day: 'THU', value: 70 },
-                        { day: 'FRI', value: 65, active: true },
-                        { day: 'SAT', value: 50 },
-                        { day: 'SUN', value: 35 },
-                      ].map(item => (
-                        <div key={item.day} className="flex flex-col items-center flex-1 gap-2">
-                          <div className="w-full bg-slate-50 rounded-t-sm flex items-end justify-center h-full relative group">
-                            <div 
-                              className={`w-full rounded-t-xl transition-all duration-500 ${item.active ? 'bg-gradient-to-t from-emerald-500 to-emerald-400 shadow-md' : 'bg-emerald-100 hover:bg-emerald-200'}`} 
-                              style={{ height: `${item.value}%` }}
-                            />
-                            <div className="absolute -top-8 bg-slate-800 text-white text-[10px] px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                              ₹{item.value * 100}
-                            </div>
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400">{item.day}</span>
+                        { tier: 'Bronze', limit: '₹500', color: 'orange', active: vendor.trustTier === 'Bronze' },
+                        { tier: 'Silver', limit: '₹2,000', color: 'slate', active: vendor.trustTier === 'Silver' },
+                        { tier: 'Gold', limit: '₹5,000', color: 'yellow', active: vendor.trustTier === 'Gold' },
+                        { tier: 'Platinum', limit: '₹10,000', color: 'slate', active: vendor.trustTier === 'Platinum' },
+                      ].map(t => (
+                        <div key={t.tier} className={`flex justify-between items-center px-4 py-2 rounded-xl text-sm ${t.active ? 'bg-blue-50 border-2 border-blue-200 font-bold' : 'bg-slate-50'}`}>
+                          <span className={t.active ? 'text-blue-700' : 'text-slate-500'}>{t.tier}</span>
+                          <span className={t.active ? 'text-blue-700 font-black' : 'text-slate-400'}>{t.limit}</span>
                         </div>
                       ))}
                     </div>

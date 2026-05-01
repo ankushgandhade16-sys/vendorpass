@@ -125,6 +125,12 @@ const WholesalerDashboard = () => {
     } catch (err) { alert(err.response?.data?.msg || 'Error'); }
   };
 
+  const sendMoney = () => {
+    if (!chatAmount || isNaN(chatAmount)) return;
+    setUpiError('');
+    setUpiModal({ action: 'chat_pay', payload: { receiverId: chatUserId, amount: Number(chatAmount), note: chatText || 'Payment' } });
+  };
+
   const handleSimulate = async (type) => {
     setSimulateAmount('');
     setSimulateModal(type);
@@ -160,6 +166,17 @@ const WholesalerDashboard = () => {
         setSimulateAmount('');
         fetchData();
         if (activeTab === 'wallet') fetchTransactions();
+      } else if (upiModal.action === 'chat_pay') {
+        const { receiverId, amount, note } = upiModal.payload;
+        await axios.post('/api/messages/send-money', { receiverId, amount, note }, { headers: { 'x-auth-token': token } });
+        setUpiModal(null);
+        setUpiPin('');
+        setChatAmount('');
+        setChatText('');
+        setShowPayInput(false);
+        openChat(receiverId);
+        fetchData();
+        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: `₹${amount} sent via chat.` });
       } else {
         const res = await axios.post('/api/transactions/send', { 
           receiverId: upiModal.payload.vendorId || chatUserId, 
@@ -184,12 +201,19 @@ const WholesalerDashboard = () => {
 
   const approveLoan = async (loanId) => {
     const inputs = loanInputs[loanId] || {};
-    if (!inputs.interestRate || !inputs.duration) return alert('Enter terms');
+    if (!inputs.interestRate || !inputs.duration) return alert('Enter interest rate and tenure');
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`/api/credit/approve/${loanId}`, inputs, { headers: { 'x-auth-token': token } });
+      await axios.put(`/api/credit/${loanId}`, { 
+        status: 'Approved', 
+        interestRate: Number(inputs.interestRate), 
+        durationMinutes: Number(inputs.duration) 
+      }, { headers: { 'x-auth-token': token } });
       fetchRequests();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      alert(err.response?.data?.msg || 'Error approving loan');
+    }
   };
 
   const handleReject = async (id) => {

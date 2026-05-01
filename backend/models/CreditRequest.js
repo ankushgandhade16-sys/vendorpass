@@ -15,3 +15,7 @@ const CreditRequestSchema = new mongoose.Schema({
   approvedDate: { type: Date },
   status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Active', 'Overdue', 'Paid', 'Defaulted'], default: 'Pending' },
   requestDate: { type: Date, default: Date.now },
+  updatedDate: { type: Date }
+});
+
+module.exports = mongoose.model('CreditRequest', CreditRequestSchema);
