@@ -238,7 +238,8 @@ const WholesalerDashboard = () => {
     let filename = pathStr;
     if (filename.includes('\\')) filename = filename.split('\\').pop();
     if (filename.includes('/')) filename = filename.split('/').pop();
-    return `/uploads/${filename}`;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    return `${baseUrl}/uploads/${filename}`;
   };
 
   if (!user || !user.wholesalerProfile) return <div className="p-8 text-center">Loading...</div>;

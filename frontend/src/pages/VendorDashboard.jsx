@@ -308,7 +308,8 @@ const VendorDashboard = () => {
     let filename = pathStr;
     if (filename.includes('\\')) filename = filename.split('\\').pop();
     if (filename.includes('/')) filename = filename.split('/').pop();
-    return `/uploads/${filename}`;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    return `${baseUrl}/uploads/${filename}`;
   };
 
   const photoUrl = getPhotoUrl(vendor.businessPhoto);
