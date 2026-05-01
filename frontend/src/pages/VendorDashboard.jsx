@@ -179,21 +179,9 @@ const VendorDashboard = () => {
 
   const confirmSimulate = async () => {
     if (!simulateAmount || isNaN(simulateAmount) || Number(simulateAmount) <= 0) return;
-    try {
-      const token = localStorage.getItem('token');
-      if (simulateModal === 'credit') {
-        // Just add money to wallet (no PIN needed)
-        await axios.post('/api/transactions/simulate', { amount: Number(simulateAmount), type: 'credit', description: `Added ₹${simulateAmount}` }, { headers: { 'x-auth-token': token } });
-        setSimulateModal(null);
-        setSimulateAmount('');
-        fetchData();
-      } else if (simulateModal === 'debit') {
-        // Paying someone in chat — require UPI PIN
-        setUpiError('');
-        setUpiModal({ action: 'send_money', payload: { amount: Number(simulateAmount) } });
-        setSimulateModal(null);
-      }
-    } catch (err) { showToast(err.response?.data?.msg || 'Error'); }
+    setUpiError('');
+    setUpiModal({ action: 'wallet_tx', payload: { type: simulateModal, amount: Number(simulateAmount) } });
+    setSimulateModal(null);
   };
 
   const handleRequestCredit = (wholesalerId) => {
@@ -262,19 +250,22 @@ const VendorDashboard = () => {
         // Refetch to get updated trust score + wallet
         await fetchLoans();
         await fetchData();
-      } else if (upiModal.action === 'send_money') {
-        const { amount } = upiModal.payload;
-        await axios.post(
-          '/api/messages/send-money',
-          { receiverId: chatUserId, amount },
-          { headers: { 'x-auth-token': token } }
-        );
+      } else if (upiModal.action === 'wallet_tx') {
+        const { type, amount } = upiModal.payload;
+        await axios.post('/api/transactions/simulate', { 
+          amount, 
+          type, 
+          description: type === 'credit' ? `Added ₹${amount}` : 'Transferred to Bank Account'
+        }, { headers: { 'x-auth-token': token } });
         setUpiModal(null);
         setUpiPin('');
         setSimulateAmount('');
-        fetchConversations();
         fetchData();
-        setSuccessScreen({ title: 'Payment Sent', amount, subtitle: 'Money sent securely.' });
+        setSuccessScreen({ 
+          title: type === 'credit' ? 'Wallet Recharged' : 'Withdrawal Successful', 
+          amount, 
+          subtitle: type === 'credit' ? 'Money added to your wallet.' : 'Money sent to your linked bank account.' 
+        });
       } else if (upiModal.action === 'chat_pay') {
         const { receiverId, amount, note } = upiModal.payload;
         await axios.post(
