@@ -38,11 +38,11 @@ const VendorDashboard = () => {
         changeLanguage(editForm.language);
       }
       
-      alert('Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
       setShowEditModal(false);
       window.location.reload();
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error updating profile');
+      showToast(err.response?.data?.msg || 'Error updating profile');
     }
   };
 
@@ -57,6 +57,13 @@ const VendorDashboard = () => {
   // Request & Repay Loan Modals
   const [requestLoanWholesalerId, setRequestLoanWholesalerId] = useState(null);
   const [requestLoanAmount, setRequestLoanAmount] = useState('');
+  const [adminId, setAdminId] = useState(null);
+  const [toast, setToast] = useState(null); // { msg, type: 'error' | 'success' }
+
+  const showToast = (msg, type = 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const [successScreen, setSuccessScreen] = useState(null); // { title: '', amount: '', subtitle: '' }
   
@@ -111,6 +118,11 @@ const VendorDashboard = () => {
 
       const wsRes = await axios.get('/api/wholesalers', { headers: { 'x-auth-token': token } });
       setWholesalers(wsRes.data);
+
+      try {
+        const adminRes = await axios.get('/api/admin/profile', { headers: { 'x-auth-token': token } });
+        setAdminId(adminRes.data._id);
+      } catch (e) { console.error('Admin profile not found', e); }
     } catch (err) {
       console.error(err);
       navigate('/vendor/login');
@@ -151,7 +163,7 @@ const VendorDashboard = () => {
       await axios.post('/api/messages/send', { receiverId: chatUserId, text: chatText }, { headers: { 'x-auth-token': token } });
       setChatText('');
       openChat(chatUserId);
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+    } catch (err) { showToast(err.response?.data?.msg || 'Error'); }
   };
 
   const sendMoney = async () => {
@@ -164,7 +176,7 @@ const VendorDashboard = () => {
       setShowPayInput(false);
       openChat(chatUserId);
       fetchData();
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+    } catch (err) { showToast(err.response?.data?.msg || 'Error'); }
   };
 
   const handleSimulate = async (type) => {
@@ -188,7 +200,7 @@ const VendorDashboard = () => {
         setUpiModal({ action: 'send_money', payload: { amount: Number(simulateAmount) } });
         setSimulateModal(null);
       }
-    } catch (err) { alert(err.response?.data?.msg || 'Error'); }
+    } catch (err) { showToast(err.response?.data?.msg || 'Error'); }
   };
 
   const handleRequestCredit = (wholesalerId) => {
@@ -218,7 +230,7 @@ const VendorDashboard = () => {
         subtitle: 'Wait for wholesaler approval.'
       });
       fetchLoans();
-    } catch (err) { alert(err.response?.data?.msg || 'Error requesting credit'); }
+    } catch (err) { showToast(err.response?.data?.msg || 'Error requesting credit'); }
   };
 
   const handleRepayLoan = (loanId, amountToRepay) => {
@@ -647,8 +659,17 @@ const VendorDashboard = () => {
 
           {activeTab === 'messages' && !chatUserId && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold mb-2">{t('messages')}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('chatWithWholesalers')}</p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-1">{t('messages')}</h2>
+                  <p className="text-sm text-slate-500">{t('chatWithWholesalers')}</p>
+                </div>
+                {adminId && (
+                  <button onClick={() => openChat(adminId)} className="bg-purple-100 text-purple-700 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-purple-200 transition text-sm">
+                    <ShieldCheck className="w-4 h-4" /> Support
+                  </button>
+                )}
+              </div>
               {conversations.map(c => (
                 <button key={c.userId} onClick={() => openChat(c.userId)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-50 border border-slate-200 transition text-left">
                   <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
@@ -699,7 +720,7 @@ const VendorDashboard = () => {
               </div>
               {/* Chat Input */}
               <div className="space-y-2">
-                {showPayInput && (
+                {chatUserId !== adminId && showPayInput && (
                   <div className="flex gap-2">
                     <input type="number" placeholder="Amount" value={chatAmount} onChange={e => setChatAmount(e.target.value)} className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 text-slate-800 placeholder-slate-500 outline-none" />
                     <button onClick={sendMoney} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-1">
@@ -708,9 +729,11 @@ const VendorDashboard = () => {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowPayInput(!showPayInput)} className={`p-3 rounded-xl transition ${showPayInput ? 'bg-emerald-600' : 'bg-slate-50 border border-slate-200 hover:bg-white/20'}`}>
-                    <IndianRupee className="w-5 h-5" />
-                  </button>
+                  {chatUserId !== adminId && (
+                    <button onClick={() => setShowPayInput(!showPayInput)} className={`p-3 rounded-xl transition ${showPayInput ? 'bg-emerald-600' : 'bg-slate-50 border border-slate-200 hover:bg-white/20'}`}>
+                      <IndianRupee className="w-5 h-5" />
+                    </button>
+                  )}
                   <input type="text" placeholder="Type a message..." value={chatText} onChange={e => setChatText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-500 outline-none" />
                   <button onClick={sendMessage} className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition">
                     <Send className="w-5 h-5" />
@@ -937,6 +960,15 @@ const VendorDashboard = () => {
             `}</style>
           </div>
         )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[300] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 max-w-sm ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <p className="font-bold text-sm">{toast.msg}</p>
+          <button onClick={() => setToast(null)} className="ml-2 text-white/70 hover:text-white text-lg font-bold">×</button>
+        </div>
+      )}
 
       </div>
     </div>

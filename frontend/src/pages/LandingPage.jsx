@@ -61,6 +61,23 @@ const LandingPage = () => {
               </div>
               <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-emerald-600 transition-colors" />
             </button>
+
+            <button 
+              onClick={() => navigate('/admin/login')}
+              className="group relative w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:border-purple-500 transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-purple-50 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300"></div>
+              <div className="relative flex items-center gap-4">
+                <div className="bg-purple-100 p-3 rounded-xl text-purple-600">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-slate-900 text-lg">System Admin</h3>
+                  <p className="text-sm text-slate-500">Security & Command Center</p>
+                </div>
+              </div>
+              <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-purple-600 transition-colors" />
+            </button>
           </div>
         </div>
 

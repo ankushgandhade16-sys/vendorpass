@@ -31,6 +31,7 @@ const WholesalerDashboard = () => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [simulateModal, setSimulateModal] = useState(null); // 'credit' | 'debit'
   const [simulateAmount, setSimulateAmount] = useState('');
+  const [adminId, setAdminId] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => {
@@ -60,6 +61,11 @@ const WholesalerDashboard = () => {
       const venRes = await axios.get('/api/vendors', { headers: { 'x-auth-token': token } });
       setVendors(venRes.data);
       await fetchRequests();
+
+      try {
+        const adminRes = await axios.get('/api/admin/profile', { headers: { 'x-auth-token': token } });
+        setAdminId(adminRes.data._id);
+      } catch (e) { console.error('Admin profile not found', e); }
     } catch (err) { console.error(err); navigate('/wholesaler/login'); }
   };
 
@@ -449,7 +455,14 @@ const WholesalerDashboard = () => {
 
         {activeTab === 'messages' && !chatUserId && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-2">{t('messages')}</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">{t('messages')}</h2>
+              {adminId && (
+                <button onClick={() => openChat(adminId)} className="bg-purple-100 text-purple-700 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-purple-200 transition text-sm">
+                  <ShieldCheck className="w-4 h-4" /> Support
+                </button>
+              )}
+            </div>
             {conversations.map(c => (
               <button key={c.userId} onClick={() => openChat(c.userId)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-50 transition text-left shadow-sm">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
